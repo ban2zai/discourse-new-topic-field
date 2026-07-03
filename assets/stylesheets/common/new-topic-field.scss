@@ -37,6 +37,12 @@
   font-weight: 700;
 }
 
+.new-topic-field-status-badge__content {
+  display: grid;
+  gap: 0.2em;
+  min-width: 0;
+}
+
 .new-topic-field-status-badge__guid {
   color: currentColor;
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
@@ -45,6 +51,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.new-topic-field-status-badge__action {
+  flex: 0 0 auto;
+  margin-left: 0.75em;
 }
 
 .new-topic-field-status-badge--linked {
@@ -73,24 +84,30 @@
 .new-topic-field-topic-header {
   align-items: center;
   display: flex;
+  flex: 1 0 100%;
   flex-wrap: wrap;
   gap: 0.5em;
   margin-top: 0.75em;
+  width: 100%;
 }
 
-.new-topic-field-topic-header__actions {
+.new-topic-field-topic-header > .new-topic-field-status-badge {
+  align-items: center;
   display: flex;
-  flex: 0 0 auto;
-  flex-wrap: wrap;
-  gap: 0.4em;
+  flex-basis: 100%;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .new-topic-field-topic-header__editor {
-  align-items: end;
+  background: var(--primary-very-low);
+  border-radius: 6px;
   display: grid;
-  flex: 1 0 100%;
+  flex: 1 1 100%;
   gap: 0.5em;
-  grid-template-columns: minmax(12rem, 32rem) auto auto;
+  grid-template-columns: minmax(14rem, 1fr) auto auto auto;
+  padding: 0.65em 0.75em;
+  width: 100%;
 }
 
 .new-topic-field-topic-header__field {
@@ -99,19 +116,35 @@
   min-width: 0;
 }
 
+.new-topic-field-topic-header__field .new-topic-field-input {
+  max-width: none;
+}
+
+.new-topic-field-topic-header__button {
+  align-self: end;
+}
+
 @media (max-width: 520px) {
   .new-topic-field-topic-header {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .new-topic-field-topic-header__actions,
+  .new-topic-field-topic-header > .new-topic-field-status-badge {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .new-topic-field-status-badge__action {
+    margin-left: 0;
+    width: 100%;
+  }
+
   .new-topic-field-topic-header__editor {
     grid-template-columns: 1fr;
   }
 
-  .new-topic-field-topic-header__button,
-  .new-topic-field-topic-header__actions .btn {
+  .new-topic-field-topic-header__button {
     width: 100%;
   }
 }

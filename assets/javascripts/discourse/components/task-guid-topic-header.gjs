@@ -34,7 +34,9 @@ export default class TaskGuidTopicHeader extends Component {
   }
 
   static shouldRender(args) {
-    return args.model?.can_view_task_guid || args.outletArgs?.model?.can_view_task_guid;
+    return (
+      args.model?.can_view_task_guid || args.outletArgs?.model?.can_view_task_guid
+    );
   }
 
   get topic() {
@@ -99,7 +101,10 @@ export default class TaskGuidTopicHeader extends Component {
       element.removeAttribute("aria-hidden");
       element.style.removeProperty("display");
 
-      if (element.parentElement !== target || element.previousElementSibling !== topicCategory) {
+      if (
+        element.parentElement !== target ||
+        element.previousElementSibling !== topicCategory
+      ) {
         topicCategory.insertAdjacentElement("afterend", element);
       }
     };
@@ -255,14 +260,29 @@ export default class TaskGuidTopicHeader extends Component {
       {{this.moveIntoTopicHeader}}
     >
       <div class={{this.badgeClasses}}>
-        <div class="new-topic-field-status-badge__label">
-          {{this.badgeLabel}}
+        <div class="new-topic-field-status-badge__content">
+          <div class="new-topic-field-status-badge__label">
+            {{this.badgeLabel}}
+          </div>
+
+          {{#if this.hasGuid}}
+            <div class="new-topic-field-status-badge__guid">
+              {{this.savedGuid}}
+            </div>
+          {{/if}}
         </div>
 
-        {{#if this.hasGuid}}
-          <div class="new-topic-field-status-badge__guid">
-            {{this.savedGuid}}
-          </div>
+        {{#if this.canManage}}
+          {{#unless this.editing}}
+            <button
+              type="button"
+              class="btn btn-default btn-small new-topic-field-status-badge__action"
+              disabled={{this.saving}}
+              {{on "click" this.startEdit}}
+            >
+              {{this.editLabel}}
+            </button>
+          {{/unless}}
         {{/if}}
       </div>
 
@@ -297,22 +317,11 @@ export default class TaskGuidTopicHeader extends Component {
             >
               {{i18n "discourse_new_topic_field.topic.cancel"}}
             </button>
-          </div>
-        {{else}}
-          <div class="new-topic-field-topic-header__actions">
-            <button
-              type="button"
-              class="btn btn-default btn-small"
-              disabled={{this.saving}}
-              {{on "click" this.startEdit}}
-            >
-              {{this.editLabel}}
-            </button>
 
             {{#if this.hasGuid}}
               <button
                 type="button"
-                class="btn btn-danger btn-small"
+                class="btn btn-danger new-topic-field-topic-header__button"
                 disabled={{this.saving}}
                 {{on "click" this.deleteGuid}}
               >
