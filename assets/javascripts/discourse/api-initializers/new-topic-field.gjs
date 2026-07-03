@@ -27,7 +27,7 @@ export default apiInitializer((api) => {
   captureTaskGuid();
 
   api.serializeOnCreate("task_guid");
-  api.renderInOutlet("composer-after-save-or-cancel", TaskGuidComposerField);
+  api.renderInOutlet("composer-fields", TaskGuidComposerField);
   api.renderAfterWrapperOutlet("post-content-cooked-html", TaskGuidTopicPanel);
 
   api.onPageChange((url) => captureTaskGuid(url));
