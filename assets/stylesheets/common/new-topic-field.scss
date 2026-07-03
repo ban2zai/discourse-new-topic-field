@@ -5,9 +5,19 @@
   padding: 0.75em;
 }
 
+.composer-fields {
+  display: flex;
+  flex-direction: column;
+}
+
+.composer-fields > span:has([data-new-topic-field-composer]) {
+  display: block;
+  order: -1;
+}
+
 .new-topic-field-composer {
   display: grid;
-  margin: 0.5em 0 0.75em;
+  margin: 0 0 0.75em;
 }
 
 .new-topic-field-status-badge {
