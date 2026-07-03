@@ -1,0 +1,14 @@
+ru:
+  js:
+    discourse_new_topic_field:
+      guid_label: "GUID задачи"
+      composer:
+        notice: "GUID задачи получен."
+      topic:
+        save: "Сохранить GUID"
+        saving: "Сохранение..."
+        save_failed: "Не удалось сохранить GUID задачи. Попробуйте ещё раз или обратитесь к администратору."
+        duplicate_guid: "Этот GUID задачи уже привязан к другой теме."
+        lookup_failed: "Не удалось проверить GUID задачи. Создание темы остановлено, попробуйте ещё раз или обратитесь к администратору."
+      errors:
+        guid_required: "Укажите GUID задачи."

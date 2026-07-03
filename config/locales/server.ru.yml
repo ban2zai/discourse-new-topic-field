@@ -1,0 +1,8 @@
+ru:
+  site_settings:
+    discourse_new_topic_field_enabled: "Включить GUID задачи для тем"
+    discourse_new_topic_field_allowed_groups: "Группы, которым разрешено видеть и менять GUID задачи в существующих темах"
+  discourse_new_topic_field:
+    errors:
+      guid_required: "Укажите GUID задачи."
+      guid_already_linked: "GUID задачи уже привязан к другой теме."

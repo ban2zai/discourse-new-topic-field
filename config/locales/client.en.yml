@@ -1,0 +1,14 @@
+en:
+  js:
+    discourse_new_topic_field:
+      guid_label: "Task GUID"
+      composer:
+        notice: "Task GUID received."
+      topic:
+        save: "Save GUID"
+        saving: "Saving..."
+        save_failed: "Failed to save task GUID. Try again or contact an administrator."
+        duplicate_guid: "This task GUID is already linked to another topic."
+        lookup_failed: "Failed to check task GUID. Topic creation is stopped; try again or contact an administrator."
+      errors:
+        guid_required: "Enter a task GUID."

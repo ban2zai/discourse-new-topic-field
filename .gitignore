@@ -1,0 +1,9 @@
+.env
+.env.*
+.agents/
+AGENTS.md
+
+node_modules/
+tmp/
+log/
+.DS_Store

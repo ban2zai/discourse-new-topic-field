@@ -1,0 +1,8 @@
+en:
+  site_settings:
+    discourse_new_topic_field_enabled: "Enable task GUID fields for topics"
+    discourse_new_topic_field_allowed_groups: "Groups allowed to view and edit task GUIDs on existing topics"
+  discourse_new_topic_field:
+    errors:
+      guid_required: "Task GUID is required."
+      guid_already_linked: "Task GUID is already linked to another topic."
