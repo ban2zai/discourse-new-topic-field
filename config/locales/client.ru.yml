@@ -2,6 +2,9 @@ ru:
   js:
     discourse_new_topic_field:
       guid_label: "GUID задачи"
+      status:
+        linked: "Задача привязана"
+        unlinked: "Задача не привязана"
       composer:
         notice: "GUID задачи получен."
       topic:

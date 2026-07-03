@@ -6,11 +6,27 @@
   padding: 0.75em;
 }
 
-.new-topic-field-composer__notice {
+.new-topic-field-composer {
+  display: grid;
+  gap: 0.75em;
+}
+
+.new-topic-field-status-badge {
+  border-radius: 6px;
+  font-weight: 600;
+  padding: 0.5em 0.75em;
+}
+
+.new-topic-field-status-badge--linked {
   background: var(--success-low);
   border-left: 3px solid var(--success);
-  margin-bottom: 0.75em;
-  padding: 0.5em 0.75em;
+  color: var(--primary);
+}
+
+.new-topic-field-status-badge--unlinked {
+  background: var(--primary-very-low);
+  border-left: 3px solid var(--primary-low-mid);
+  color: var(--primary-medium);
 }
 
 .new-topic-field-composer__label,
@@ -29,6 +45,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75em;
+}
+
+.new-topic-field-topic-panel .new-topic-field-status-badge {
+  flex: 1 0 100%;
 }
 
 .new-topic-field-topic-panel__label {

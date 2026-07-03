@@ -18,13 +18,30 @@ export default class TaskGuidComposerField extends Component {
   get shouldRender() {
     return (
       this.siteSettings.discourse_new_topic_field_enabled &&
-      this.model?.action === "createTopic" &&
-      this.guid
+      this.model?.action === "createTopic"
     );
   }
 
   get guid() {
     return this.model?.task_guid;
+  }
+
+  get hasGuid() {
+    return Boolean(this.guid?.trim());
+  }
+
+  get badgeClasses() {
+    const stateClass = this.hasGuid
+      ? "new-topic-field-status-badge--linked"
+      : "new-topic-field-status-badge--unlinked";
+
+    return `new-topic-field-status-badge ${stateClass}`;
+  }
+
+  get badgeLabel() {
+    return this.hasGuid
+      ? i18n("discourse_new_topic_field.status.linked")
+      : i18n("discourse_new_topic_field.status.unlinked");
   }
 
   syncGuidFromUrl() {
@@ -46,20 +63,22 @@ export default class TaskGuidComposerField extends Component {
   <template>
     {{#if this.shouldRender}}
       <div class="new-topic-field-composer" data-new-topic-field-composer>
-        <div class="new-topic-field-composer__notice">
-          {{i18n "discourse_new_topic_field.composer.notice"}}
+        <div class={{this.badgeClasses}}>
+          {{this.badgeLabel}}
         </div>
 
-        <label class="new-topic-field-composer__label">
-          <span>{{i18n "discourse_new_topic_field.guid_label"}}</span>
-          <input
-            type="text"
-            value={{this.guid}}
-            readonly
-            class="new-topic-field-input"
-            data-new-topic-field-composer-guid
-          />
-        </label>
+        {{#if this.hasGuid}}
+          <label class="new-topic-field-composer__label">
+            <span>{{i18n "discourse_new_topic_field.guid_label"}}</span>
+            <input
+              type="text"
+              value={{this.guid}}
+              readonly
+              class="new-topic-field-input"
+              data-new-topic-field-composer-guid
+            />
+          </label>
+        {{/if}}
       </div>
     {{/if}}
   </template>

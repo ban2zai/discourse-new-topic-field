@@ -22,11 +22,13 @@ export default class TaskGuidTopicPanel extends Component {
   @service dialog;
 
   @tracked guid = "";
+  @tracked savedGuid = "";
   @tracked saving = false;
 
   constructor(owner, args) {
     super(owner, args);
-    this.guid = this.topic?.task_guid || "";
+    this.savedGuid = this.topic?.task_guid || "";
+    this.guid = this.savedGuid;
   }
 
   get post() {
@@ -49,6 +51,24 @@ export default class TaskGuidTopicPanel extends Component {
     return this.saving
       ? i18n("discourse_new_topic_field.topic.saving")
       : i18n("discourse_new_topic_field.topic.save");
+  }
+
+  get hasGuid() {
+    return Boolean(this.savedGuid?.trim());
+  }
+
+  get badgeClasses() {
+    const stateClass = this.hasGuid
+      ? "new-topic-field-status-badge--linked"
+      : "new-topic-field-status-badge--unlinked";
+
+    return `new-topic-field-status-badge ${stateClass}`;
+  }
+
+  get badgeLabel() {
+    return this.hasGuid
+      ? i18n("discourse_new_topic_field.status.linked")
+      : i18n("discourse_new_topic_field.status.unlinked");
   }
 
   @action
@@ -104,6 +124,7 @@ export default class TaskGuidTopicPanel extends Component {
 
       const payload = await response.json();
       this.guid = payload.guid || guid;
+      this.savedGuid = this.guid;
       setTopicGuid(this.topic, this.guid);
     } catch {
       this.dialog.dialog({
@@ -118,6 +139,10 @@ export default class TaskGuidTopicPanel extends Component {
   <template>
     {{#if this.shouldRender}}
       <div class="new-topic-field-topic-panel" data-new-topic-field-topic-panel>
+        <div class={{this.badgeClasses}}>
+          {{this.badgeLabel}}
+        </div>
+
         <label class="new-topic-field-topic-panel__label">
           <span>{{i18n "discourse_new_topic_field.guid_label"}}</span>
           <input

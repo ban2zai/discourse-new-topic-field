@@ -2,6 +2,9 @@ en:
   js:
     discourse_new_topic_field:
       guid_label: "Task GUID"
+      status:
+        linked: "Task linked"
+        unlinked: "Task not linked"
       composer:
         notice: "Task GUID received."
       topic:
