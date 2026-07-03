@@ -3,8 +3,8 @@ ru:
     discourse_new_topic_field:
       guid_label: "GUID задачи"
       status:
-        linked: "Задача привязана"
-        unlinked: "Задача не привязана"
+        linked: "GUID задачи получен"
+        unlinked: "GUID задачи не получен"
       composer:
         notice: "GUID задачи получен."
       topic:

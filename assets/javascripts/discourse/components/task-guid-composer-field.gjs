@@ -64,21 +64,19 @@ export default class TaskGuidComposerField extends Component {
     {{#if this.shouldRender}}
       <div class="new-topic-field-composer" data-new-topic-field-composer>
         <div class={{this.badgeClasses}}>
-          {{this.badgeLabel}}
-        </div>
+          <div class="new-topic-field-status-badge__label">
+            {{this.badgeLabel}}
+          </div>
 
-        {{#if this.hasGuid}}
-          <label class="new-topic-field-composer__label">
-            <span>{{i18n "discourse_new_topic_field.guid_label"}}</span>
-            <input
-              type="text"
-              value={{this.guid}}
-              readonly
-              class="new-topic-field-input"
+          {{#if this.hasGuid}}
+            <div
+              class="new-topic-field-status-badge__guid"
               data-new-topic-field-composer-guid
-            />
-          </label>
-        {{/if}}
+            >
+              {{this.guid}}
+            </div>
+          {{/if}}
+        </div>
       </div>
     {{/if}}
   </template>

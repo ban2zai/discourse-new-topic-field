@@ -3,8 +3,8 @@ en:
     discourse_new_topic_field:
       guid_label: "Task GUID"
       status:
-        linked: "Task linked"
-        unlinked: "Task not linked"
+        linked: "Task GUID received"
+        unlinked: "Task GUID not received"
       composer:
         notice: "Task GUID received."
       topic:
