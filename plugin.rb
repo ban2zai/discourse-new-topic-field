@@ -48,6 +48,13 @@ module ::DiscourseNewTopicField
     true
   end
 
+  def self.clear_topic_guid(topic)
+    topic.custom_fields[FIELD_NAME] = nil
+    topic.save_custom_fields(true)
+    TopicCustomField.where(topic_id: topic.id, name: FIELD_NAME).delete_all
+    true
+  end
+
   def self.topic_for_guid(guid, except_topic_id: nil)
     normalized_guid = normalize_guid(guid)
     return nil if normalized_guid.blank?
@@ -76,6 +83,13 @@ after_initialize do
   register_topic_custom_field_type(DiscourseNewTopicField::FIELD_NAME, :string)
 
   module ::DiscourseNewTopicField::GuardianExtensions
+    def can_view_task_guid?(topic = nil)
+      return false unless SiteSetting.discourse_new_topic_field_enabled
+      return false if @user.blank?
+
+      can_manage_task_guid?(topic) || (topic.present? && topic.user_id == @user.id)
+    end
+
     def can_manage_task_guid?(_topic = nil)
       return false unless SiteSetting.discourse_new_topic_field_enabled
 
@@ -91,9 +105,13 @@ after_initialize do
   reloadable_patch { ::Guardian.prepend(::DiscourseNewTopicField::GuardianExtensions) }
 
   add_to_serializer(:topic_view, :task_guid) do
-    if scope.can_manage_task_guid?(object.topic)
+    if scope.can_view_task_guid?(object.topic)
       object.topic.custom_fields[DiscourseNewTopicField::FIELD_NAME]
     end
+  end
+
+  add_to_serializer(:topic_view, :can_view_task_guid) do
+    scope.can_view_task_guid?(object.topic)
   end
 
   add_to_serializer(:topic_view, :can_manage_task_guid) do
@@ -113,5 +131,11 @@ after_initialize do
         defaults: {
           format: :json,
         }
+
+    delete "/new-topic-field/topics/:topic_id/guid" =>
+             "discourse_new_topic_field/topics#destroy_guid",
+           defaults: {
+             format: :json,
+           }
   end
 end

@@ -5,7 +5,7 @@ module DiscourseNewTopicField
     requires_plugin DiscourseNewTopicField::PLUGIN_NAME
 
     before_action :ensure_enabled
-    before_action :ensure_logged_in, only: [:update_guid]
+    before_action :ensure_logged_in, only: %i[update_guid destroy_guid]
 
     def index
       guid = normalized_param_guid
@@ -45,6 +45,16 @@ module DiscourseNewTopicField
           ),
         status: 409,
       )
+    end
+
+    def destroy_guid
+      topic = Topic.find(params[:topic_id])
+      guardian.ensure_can_manage_task_guid!(topic)
+
+      DiscourseNewTopicField.clear_topic_guid(topic)
+      MessageBus.publish("/topic/#{topic.id}", reload_topic: true, refresh_stream: true)
+
+      render json: success_json.merge(topic_payload(topic, nil))
     end
 
     private

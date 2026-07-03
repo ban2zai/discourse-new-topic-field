@@ -1,7 +1,7 @@
 import { apiInitializer } from "discourse/lib/api";
 import { i18n } from "discourse-i18n";
 import TaskGuidComposerField from "../components/task-guid-composer-field";
-import TaskGuidTopicPanel from "../components/task-guid-topic-panel";
+import TaskGuidTopicHeader from "../components/task-guid-topic-header";
 import { captureTaskGuid } from "../lib/task-guid-cache";
 
 async function linkedTopic(guid) {
@@ -28,7 +28,7 @@ export default apiInitializer((api) => {
 
   api.serializeOnCreate("task_guid");
   api.renderInOutlet("composer-fields", TaskGuidComposerField);
-  api.renderAfterWrapperOutlet("post-content-cooked-html", TaskGuidTopicPanel);
+  api.renderInOutlet("topic-title", TaskGuidTopicHeader);
 
   api.onPageChange((url) => captureTaskGuid(url));
 

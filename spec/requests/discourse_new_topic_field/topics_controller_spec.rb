@@ -4,7 +4,7 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
   fab!(:group)
   fab!(:allowed_user) { Fabricate(:user) }
   fab!(:regular_user) { Fabricate(:user) }
-  fab!(:topic)
+  fab!(:topic) { Fabricate(:topic, user: regular_user) }
   fab!(:second_topic) { Fabricate(:topic) }
 
   let(:guid) { "09abcfac-0e44-11f1-86e9-a94ec75f6b04" }
@@ -64,6 +64,33 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
       put "/new-topic-field/topics/#{topic.id}/guid.json", params: { guid: guid }
 
       expect(response.status).to eq(403)
+    end
+  end
+
+  describe "DELETE /new-topic-field/topics/:topic_id/guid" do
+    it "allows configured group members to delete guid and frees it for another topic" do
+      store_guid(topic)
+      sign_in(allowed_user)
+
+      delete "/new-topic-field/topics/#{topic.id}/guid.json"
+
+      expect(response.status).to eq(200)
+      expect(topic.reload.custom_fields[DiscourseNewTopicField::FIELD_NAME]).to be_blank
+
+      put "/new-topic-field/topics/#{second_topic.id}/guid.json", params: { guid: guid }
+
+      expect(response.status).to eq(200)
+      expect(second_topic.reload.custom_fields[DiscourseNewTopicField::FIELD_NAME]).to eq(guid)
+    end
+
+    it "blocks topic authors outside configured groups from deleting guid" do
+      store_guid(topic)
+      sign_in(regular_user)
+
+      delete "/new-topic-field/topics/#{topic.id}/guid.json"
+
+      expect(response.status).to eq(403)
+      expect(topic.reload.custom_fields[DiscourseNewTopicField::FIELD_NAME]).to eq(guid)
     end
   end
 end

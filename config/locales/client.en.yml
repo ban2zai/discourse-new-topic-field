@@ -8,9 +8,15 @@ en:
       composer:
         notice: "Task GUID received."
       topic:
+        add: "Add"
+        edit: "Edit"
+        delete: "Delete"
+        cancel: "Cancel"
         save: "Save GUID"
         saving: "Saving..."
         save_failed: "Failed to save task GUID. Try again or contact an administrator."
+        delete_confirm: "Delete the task GUID from this topic?"
+        delete_failed: "Failed to delete task GUID. Try again or contact an administrator."
         duplicate_guid: "This task GUID is already linked to another topic."
         lookup_failed: "Failed to check task GUID. Topic creation is stopped; try again or contact an administrator."
       errors:

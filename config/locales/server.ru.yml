@@ -6,3 +6,4 @@ ru:
     errors:
       guid_required: "Укажите GUID задачи."
       guid_already_linked: "GUID задачи уже привязан к другой теме."
+      guid_delete_failed: "Не удалось удалить GUID задачи."

@@ -6,3 +6,4 @@ en:
     errors:
       guid_required: "Task GUID is required."
       guid_already_linked: "Task GUID is already linked to another topic."
+      guid_delete_failed: "Failed to delete task GUID."
