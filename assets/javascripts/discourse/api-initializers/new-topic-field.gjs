@@ -2,6 +2,7 @@ import { apiInitializer } from "discourse/lib/api";
 import { i18n } from "discourse-i18n";
 import TaskGuidComposerField from "../components/task-guid-composer-field";
 import TaskGuidTopicPanel from "../components/task-guid-topic-panel";
+import { captureTaskGuid } from "../lib/task-guid-cache";
 
 async function linkedTopic(guid) {
   const response = await fetch(
@@ -23,9 +24,13 @@ async function linkedTopic(guid) {
 }
 
 export default apiInitializer((api) => {
+  captureTaskGuid();
+
   api.serializeOnCreate("task_guid");
   api.renderInOutlet("composer-after-save-or-cancel", TaskGuidComposerField);
   api.renderAfterWrapperOutlet("post-content-cooked-html", TaskGuidTopicPanel);
+
+  api.onPageChange((url) => captureTaskGuid(url));
 
   api.modifyClass(
     "model:composer",

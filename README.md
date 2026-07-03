@@ -5,6 +5,7 @@
 ## Возможности
 
 - читает `guid` из ссылки вида `/new-topic?category=...&tags=...&guid=...`;
+- сохраняет `guid` в pre-initializer до редиректа Discourse с `/new-topic` на реальный список тем;
 - показывает readonly-поле и плашку в composer;
 - сохраняет значение в `TopicCustomField` темы;
 - не даёт привязать один GUID к нескольким темам и останавливает создание темы из composer, если GUID уже занят;

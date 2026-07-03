@@ -1,11 +1,7 @@
 import Component from "@glimmer/component";
 import { service } from "@ember/service";
 import { i18n } from "discourse-i18n";
-
-function queryGuid() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("guid")?.trim();
-}
+import { consumeTaskGuid } from "../lib/task-guid-cache";
 
 export default class TaskGuidComposerField extends Component {
   @service siteSettings;
@@ -41,7 +37,7 @@ export default class TaskGuidComposerField extends Component {
       return;
     }
 
-    const guid = queryGuid();
+    const guid = consumeTaskGuid();
     if (guid) {
       model.set("task_guid", guid);
     }
