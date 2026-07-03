@@ -89,6 +89,20 @@ export default class TaskGuidTopicHeader extends Component {
       element.parentNode.insertBefore(placeholder, element);
     }
 
+    const syncWidth = () => {
+      const postFrame = document.querySelector(
+        "article#post_1, .topic-post:first-of-type article.boxed, .topic-post:first-of-type .boxed"
+      );
+      const width = postFrame?.getBoundingClientRect().width;
+
+      if (width) {
+        element.style.setProperty(
+          "--new-topic-field-topic-width",
+          `${Math.round(width)}px`
+        );
+      }
+    };
+
     const move = () => {
       const topicCategory = document.querySelector("#topic-title .topic-category");
       const target = topicCategory?.parentElement;
@@ -107,6 +121,8 @@ export default class TaskGuidTopicHeader extends Component {
       ) {
         topicCategory.insertAdjacentElement("afterend", element);
       }
+
+      syncWidth();
     };
 
     const scheduleMove = () => {
@@ -119,10 +135,12 @@ export default class TaskGuidTopicHeader extends Component {
 
     const observer = new MutationObserver(scheduleMove);
     observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("resize", scheduleMove);
 
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+      window.removeEventListener("resize", scheduleMove);
 
       if (placeholder?.parentNode && element.parentNode !== placeholder.parentNode) {
         placeholder.parentNode.insertBefore(element, placeholder);
@@ -300,34 +318,36 @@ export default class TaskGuidTopicHeader extends Component {
               />
             </label>
 
-            <button
-              type="button"
-              class="btn btn-primary new-topic-field-topic-header__button"
-              disabled={{this.saving}}
-              {{on "click" this.saveGuid}}
-            >
-              {{this.saveLabel}}
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-flat new-topic-field-topic-header__button"
-              disabled={{this.saving}}
-              {{on "click" this.cancelEdit}}
-            >
-              {{i18n "discourse_new_topic_field.topic.cancel"}}
-            </button>
-
-            {{#if this.hasGuid}}
+            <div class="new-topic-field-topic-header__editor-actions">
               <button
                 type="button"
-                class="btn btn-danger new-topic-field-topic-header__button"
+                class="btn btn-primary new-topic-field-topic-header__button"
                 disabled={{this.saving}}
-                {{on "click" this.deleteGuid}}
+                {{on "click" this.saveGuid}}
               >
-                {{i18n "discourse_new_topic_field.topic.delete"}}
+                {{this.saveLabel}}
               </button>
-            {{/if}}
+
+              <button
+                type="button"
+                class="btn btn-flat new-topic-field-topic-header__button"
+                disabled={{this.saving}}
+                {{on "click" this.cancelEdit}}
+              >
+                {{i18n "discourse_new_topic_field.topic.cancel"}}
+              </button>
+
+              {{#if this.hasGuid}}
+                <button
+                  type="button"
+                  class="btn btn-danger new-topic-field-topic-header__button"
+                  disabled={{this.saving}}
+                  {{on "click" this.deleteGuid}}
+                >
+                  {{i18n "discourse_new_topic_field.topic.delete"}}
+                </button>
+              {{/if}}
+            </div>
           </div>
         {{/if}}
       {{/if}}

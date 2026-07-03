@@ -15,6 +15,7 @@
 
 .new-topic-field-status-badge {
   border-radius: 6px;
+  box-sizing: border-box;
   display: grid;
   flex: 1 1 auto;
   gap: 0.2em;
@@ -83,11 +84,13 @@
 
 .new-topic-field-topic-header {
   align-items: center;
+  box-sizing: border-box;
   display: flex;
   flex: 1 0 100%;
   flex-wrap: wrap;
   gap: 0.5em;
   margin-top: 0.75em;
+  max-width: var(--new-topic-field-topic-width, 100%);
   width: 100%;
 }
 
@@ -102,10 +105,11 @@
 .new-topic-field-topic-header__editor {
   background: var(--primary-very-low);
   border-radius: 6px;
+  box-sizing: border-box;
   display: grid;
   flex: 1 1 100%;
-  gap: 0.5em;
-  grid-template-columns: minmax(14rem, 1fr) auto auto auto;
+  gap: 0.65em;
+  grid-template-columns: 1fr;
   padding: 0.65em 0.75em;
   width: 100%;
 }
@@ -117,11 +121,19 @@
 }
 
 .new-topic-field-topic-header__field .new-topic-field-input {
+  box-sizing: border-box;
   max-width: none;
 }
 
+.new-topic-field-topic-header__editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  justify-content: flex-end;
+}
+
 .new-topic-field-topic-header__button {
-  align-self: end;
+  flex: 0 0 auto;
 }
 
 @media (max-width: 520px) {
@@ -140,8 +152,8 @@
     width: 100%;
   }
 
-  .new-topic-field-topic-header__editor {
-    grid-template-columns: 1fr;
+  .new-topic-field-topic-header__editor-actions {
+    flex-direction: column;
   }
 
   .new-topic-field-topic-header__button {
