@@ -20,6 +20,21 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
     topic.save_custom_fields(true)
   end
 
+  def signature_params(guid, expires: 1.hour.from_now.to_i, nonce: "test-nonce")
+    {
+      guid: guid,
+      expires: expires.to_s,
+      nonce: nonce,
+      sig:
+        DiscourseNewTopicField.signature_for(
+          guid: guid,
+          expires: expires.to_s,
+          nonce: nonce,
+          secret: SiteSetting.discourse_new_topic_field_signature_secret,
+        ),
+    }
+  end
+
   describe "GET /new-topic-field/topics" do
     it "returns the topic linked to the requested guid" do
       store_guid(topic)
@@ -34,6 +49,33 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
       get "/new-topic-field/topics.json"
 
       expect(response.status).to eq(422)
+    end
+  end
+
+  describe "GET /new-topic-field/signature/validate" do
+    before do
+      SiteSetting.discourse_new_topic_field_require_signature = true
+      SiteSetting.discourse_new_topic_field_signature_secret = "test-secret"
+    end
+
+    it "accepts a valid signature" do
+      get "/new-topic-field/signature/validate.json", params: signature_params(guid)
+
+      expect(response.status).to eq(200)
+    end
+
+    it "rejects an invalid signature" do
+      get "/new-topic-field/signature/validate.json",
+          params: signature_params(guid).merge(sig: "0" * 64)
+
+      expect(response.status).to eq(403)
+    end
+
+    it "rejects an expired signature" do
+      get "/new-topic-field/signature/validate.json",
+          params: signature_params(guid, expires: 1.minute.ago.to_i)
+
+      expect(response.status).to eq(403)
     end
   end
 

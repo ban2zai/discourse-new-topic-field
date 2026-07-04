@@ -54,9 +54,12 @@ export default class TaskGuidComposerField extends Component {
       return;
     }
 
-    const guid = consumeTaskGuid();
-    if (guid) {
-      model.set("task_guid", guid);
+    const taskGuid = consumeTaskGuid();
+    if (taskGuid?.guid) {
+      model.set("task_guid", taskGuid.guid);
+      model.set("task_guid_expires", taskGuid.expires);
+      model.set("task_guid_nonce", taskGuid.nonce);
+      model.set("task_guid_sig", taskGuid.sig);
     }
   }
 

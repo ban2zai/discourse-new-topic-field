@@ -1,26 +1,39 @@
 const STORAGE_KEY = "discourse-new-topic-field:pending-guid";
 
-let pendingGuid = null;
+let pendingTaskGuid = null;
 
-function guidFromUrl(url) {
+function taskGuidFromUrl(url) {
   try {
-    return new URL(url, window.location.origin).searchParams.get("guid")?.trim();
+    const params = new URL(url, window.location.origin).searchParams;
+    const guid = params.get("guid")?.trim();
+
+    if (!guid) {
+      return null;
+    }
+
+    return {
+      guid,
+      expires: params.get("expires")?.trim() || null,
+      nonce: params.get("nonce")?.trim() || null,
+      sig: params.get("sig")?.trim() || null,
+    };
   } catch {
     return null;
   }
 }
 
-function storeGuid(guid) {
+function storeTaskGuid(taskGuid) {
   try {
-    window.sessionStorage?.setItem(STORAGE_KEY, guid);
+    window.sessionStorage?.setItem(STORAGE_KEY, JSON.stringify(taskGuid));
   } catch {
     // In restricted browser modes memory cache is enough for the current boot.
   }
 }
 
-function storedGuid() {
+function storedTaskGuid() {
   try {
-    return window.sessionStorage?.getItem(STORAGE_KEY);
+    const storedValue = window.sessionStorage?.getItem(STORAGE_KEY);
+    return storedValue ? JSON.parse(storedValue) : null;
   } catch {
     return null;
   }
@@ -35,23 +48,23 @@ function clearStoredGuid() {
 }
 
 export function captureTaskGuid(url = window.location.href) {
-  const guid = guidFromUrl(url);
-  if (!guid) {
+  const taskGuid = taskGuidFromUrl(url);
+  if (!taskGuid) {
     return null;
   }
 
-  pendingGuid = guid;
-  storeGuid(guid);
-  return guid;
+  pendingTaskGuid = taskGuid;
+  storeTaskGuid(taskGuid);
+  return taskGuid;
 }
 
 export function consumeTaskGuid() {
-  const guid = pendingGuid || storedGuid();
+  const taskGuid = pendingTaskGuid || storedTaskGuid();
 
-  if (guid) {
-    pendingGuid = null;
+  if (taskGuid) {
+    pendingTaskGuid = null;
     clearStoredGuid();
   }
 
-  return guid;
+  return taskGuid;
 }

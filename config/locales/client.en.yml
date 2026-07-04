@@ -18,6 +18,7 @@ en:
         delete_confirm: "Delete the task GUID from this topic?"
         delete_failed: "Failed to delete task GUID. Try again or contact an administrator."
         duplicate_guid: "This task GUID is already linked to another topic."
+        invalid_signature: "Task GUID signature is invalid or expired. Open the task link again from 1C."
         lookup_failed: "Failed to check task GUID. Topic creation is stopped; try again or contact an administrator."
       errors:
         guid_required: "Enter a task GUID."

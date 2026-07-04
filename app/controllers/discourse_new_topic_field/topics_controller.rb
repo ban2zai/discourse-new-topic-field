@@ -47,6 +47,22 @@ module DiscourseNewTopicField
       )
     end
 
+    def validate_signature
+      guid = normalized_param_guid
+      return render_json_error(I18n.t("discourse_new_topic_field.errors.guid_required"), status: 422) if guid.blank?
+
+      if DiscourseNewTopicField.valid_signature?(
+           guid: guid,
+           expires: params[:expires],
+           nonce: params[:nonce],
+           sig: params[:sig],
+         )
+        render json: success_json
+      else
+        render_json_error(I18n.t("discourse_new_topic_field.errors.invalid_signature"), status: 403)
+      end
+    end
+
     def destroy_guid
       topic = Topic.find(params[:topic_id])
       guardian.ensure_can_manage_task_guid!(topic)

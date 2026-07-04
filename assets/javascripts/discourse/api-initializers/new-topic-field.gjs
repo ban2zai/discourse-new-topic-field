@@ -23,10 +23,30 @@ async function linkedTopic(guid) {
   return payload.topics?.[0];
 }
 
+async function validateSignature(guid, expires, nonce, sig) {
+  const params = new URLSearchParams({ guid, expires, nonce, sig });
+  const response = await fetch(
+    `/new-topic-field/signature/validate.json?${params.toString()}`,
+    {
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`GUID signature validation failed with status ${response.status}`);
+  }
+}
+
 export default apiInitializer((api) => {
   captureTaskGuid();
 
   api.serializeOnCreate("task_guid");
+  api.serializeOnCreate("task_guid_expires");
+  api.serializeOnCreate("task_guid_nonce");
+  api.serializeOnCreate("task_guid_sig");
   api.renderInOutlet("composer-fields", TaskGuidComposerField);
   api.renderInOutlet("topic-title", TaskGuidTopicHeader);
 
@@ -45,6 +65,24 @@ export default apiInitializer((api) => {
             !this.task_guid
           ) {
             return;
+          }
+
+          if (this.siteSettings.discourse_new_topic_field_require_signature) {
+            try {
+              await validateSignature(
+                this.task_guid,
+                this.task_guid_expires,
+                this.task_guid_nonce,
+                this.task_guid_sig
+              );
+            } catch {
+              this.dialog.dialog({
+                type: "alert",
+                message: i18n("discourse_new_topic_field.topic.invalid_signature"),
+              });
+
+              return Promise.reject();
+            }
           }
 
           let topic;

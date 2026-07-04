@@ -6,3 +6,11 @@ plugins:
     default: ""
     type: group_list
     list_type: compact
+  discourse_new_topic_field_require_signature:
+    default: false
+    type: bool
+    client: true
+  discourse_new_topic_field_signature_secret:
+    default: ""
+    type: string
+    secret: true
