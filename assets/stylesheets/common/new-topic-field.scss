@@ -77,6 +77,15 @@
   background: var(--primary-low-mid);
 }
 
+.new-topic-field-status-badge--invalid {
+  background: var(--danger-low);
+  color: var(--danger);
+}
+
+.new-topic-field-status-badge--invalid::before {
+  background: var(--danger);
+}
+
 .new-topic-field-input {
   max-width: 32rem;
   width: 100%;

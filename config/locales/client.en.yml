@@ -5,6 +5,7 @@ en:
       status:
         linked: "Task GUID received"
         unlinked: "Task GUID not received"
+        invalid: "Task GUID failed verification"
       composer:
         notice: "Task GUID received."
       topic:

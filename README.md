@@ -39,7 +39,7 @@ guid=<guid>&expires=<unix_seconds>&nonce=<uuid>&sig=<hmac_sha256_hex>
 Быстро сгенерировать тестовую ссылку без 1С можно через helper:
 
 ```powershell
-ruby script/generate_signed_new_topic_url.rb test-secret 09abcfac-0e44-11f1-86e9-a94ec75f6b04 https://forum.apogey.ru Обсуждения Техно
+ruby script/generate_signed_new_topic_url.rb test-secret 09abcfac-0e44-11f1-86e9-a94ec75f6b04
 ```
 
 Перед тестом в админке Discourse нужно поставить такой же secret (`test-secret`) или заменить его в команде.

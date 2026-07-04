@@ -5,6 +5,7 @@ ru:
       status:
         linked: "GUID задачи получен"
         unlinked: "GUID задачи не получен"
+        invalid: "GUID не прошел проверку"
       composer:
         notice: "GUID задачи получен."
       topic:

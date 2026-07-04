@@ -1,10 +1,30 @@
 import Component from "@glimmer/component";
+import { tracked } from "@glimmer/tracking";
 import { service } from "@ember/service";
 import { i18n } from "discourse-i18n";
 import { consumeTaskGuid } from "../lib/task-guid-cache";
 
+async function validateSignature(guid, expires, nonce, sig) {
+  const params = new URLSearchParams({ guid, expires, nonce, sig });
+  const response = await fetch(
+    `/new-topic-field/signature/validate.json?${params.toString()}`,
+    {
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`GUID signature validation failed with status ${response.status}`);
+  }
+}
+
 export default class TaskGuidComposerField extends Component {
   @service siteSettings;
+
+  @tracked invalidSignature = false;
 
   constructor(owner, args) {
     super(owner, args);
@@ -31,17 +51,39 @@ export default class TaskGuidComposerField extends Component {
   }
 
   get badgeClasses() {
-    const stateClass = this.hasGuid
-      ? "new-topic-field-status-badge--linked"
-      : "new-topic-field-status-badge--unlinked";
+    let stateClass = "new-topic-field-status-badge--unlinked";
+
+    if (this.invalidSignature) {
+      stateClass = "new-topic-field-status-badge--invalid";
+    } else if (this.hasGuid) {
+      stateClass = "new-topic-field-status-badge--linked";
+    }
 
     return `new-topic-field-status-badge ${stateClass}`;
   }
 
   get badgeLabel() {
+    if (this.invalidSignature) {
+      return i18n("discourse_new_topic_field.status.invalid");
+    }
+
     return this.hasGuid
       ? i18n("discourse_new_topic_field.status.linked")
       : i18n("discourse_new_topic_field.status.unlinked");
+  }
+
+  setTaskGuid(model, taskGuid) {
+    model.set("task_guid", taskGuid.guid);
+    model.set("task_guid_expires", taskGuid.expires);
+    model.set("task_guid_nonce", taskGuid.nonce);
+    model.set("task_guid_sig", taskGuid.sig);
+  }
+
+  clearTaskGuid(model) {
+    model.set("task_guid", null);
+    model.set("task_guid_expires", null);
+    model.set("task_guid_nonce", null);
+    model.set("task_guid_sig", null);
   }
 
   syncGuidFromUrl() {
@@ -55,12 +97,30 @@ export default class TaskGuidComposerField extends Component {
     }
 
     const taskGuid = consumeTaskGuid();
-    if (taskGuid?.guid) {
-      model.set("task_guid", taskGuid.guid);
-      model.set("task_guid_expires", taskGuid.expires);
-      model.set("task_guid_nonce", taskGuid.nonce);
-      model.set("task_guid_sig", taskGuid.sig);
+    if (!taskGuid?.guid) {
+      return;
     }
+
+    if (!this.siteSettings.discourse_new_topic_field_require_signature) {
+      this.setTaskGuid(model, taskGuid);
+      return;
+    }
+
+    if (!taskGuid.expires || !taskGuid.nonce || !taskGuid.sig) {
+      this.invalidSignature = true;
+      this.clearTaskGuid(model);
+      return;
+    }
+
+    validateSignature(taskGuid.guid, taskGuid.expires, taskGuid.nonce, taskGuid.sig)
+      .then(() => {
+        this.invalidSignature = false;
+        this.setTaskGuid(model, taskGuid);
+      })
+      .catch(() => {
+        this.invalidSignature = true;
+        this.clearTaskGuid(model);
+      });
   }
 
   <template>

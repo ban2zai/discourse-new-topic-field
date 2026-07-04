@@ -6,9 +6,9 @@ require "uri"
 
 secret = ARGV[0]
 guid = ARGV[1]
-base_url = ARGV[2] || "https://forum.apogey.ru"
-category = ARGV[3] || "Discussion"
-tags = ARGV[4] || "Tech"
+base_url = ARGV[2] || "https://forum.b2zworkflows.ru"
+category = ARGV[3] || "Обсуждение"
+tags = ARGV[4] || "Техно"
 expires = (Time.now.to_i + 7200).to_s
 nonce = SecureRandom.uuid
 
