@@ -25,6 +25,7 @@ export default class TaskGuidComposerField extends Component {
   @service siteSettings;
 
   @tracked invalidSignature = false;
+  @tracked displayedGuid = null;
 
   constructor(owner, args) {
     super(owner, args);
@@ -43,7 +44,7 @@ export default class TaskGuidComposerField extends Component {
   }
 
   get guid() {
-    return this.model?.task_guid;
+    return this.displayedGuid || this.model?.task_guid;
   }
 
   get hasGuid() {
@@ -73,6 +74,7 @@ export default class TaskGuidComposerField extends Component {
   }
 
   setTaskGuid(model, taskGuid) {
+    this.displayedGuid = taskGuid.guid;
     model.set("task_guid", taskGuid.guid);
     model.set("task_guid_expires", taskGuid.expires);
     model.set("task_guid_nonce", taskGuid.nonce);
@@ -80,6 +82,7 @@ export default class TaskGuidComposerField extends Component {
   }
 
   clearTaskGuid(model) {
+    this.displayedGuid = null;
     model.set("task_guid", null);
     model.set("task_guid_expires", null);
     model.set("task_guid_nonce", null);
@@ -108,7 +111,7 @@ export default class TaskGuidComposerField extends Component {
 
     if (!taskGuid.expires || !taskGuid.nonce || !taskGuid.sig) {
       this.invalidSignature = true;
-      this.clearTaskGuid(model);
+      this.setTaskGuid(model, taskGuid);
       return;
     }
 
@@ -119,7 +122,7 @@ export default class TaskGuidComposerField extends Component {
       })
       .catch(() => {
         this.invalidSignature = true;
-        this.clearTaskGuid(model);
+        this.setTaskGuid(model, taskGuid);
       });
   }
 
