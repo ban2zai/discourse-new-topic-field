@@ -4,6 +4,7 @@ ru:
     discourse_new_topic_field_allowed_groups: "Группы, которым разрешено видеть и менять GUID задачи в существующих темах"
     discourse_new_topic_field_require_signature: "Требовать HMAC-подпись для ссылок с GUID задачи"
     discourse_new_topic_field_signature_secret: "Секрет для проверки HMAC-подписи ссылок с GUID задачи"
+    discourse_new_topic_field_lookup_token: "Секретный URL-токен для server-to-server endpoint'ов поиска тем по GUID"
   discourse_new_topic_field:
     errors:
       guid_required: "Укажите GUID задачи."

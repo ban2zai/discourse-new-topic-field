@@ -43,3 +43,106 @@ ruby script/generate_signed_new_topic_url.rb test-secret 09abcfac-0e44-11f1-86e9
 ```
 
 Перед тестом в админке Discourse нужно поставить такой же secret (`test-secret`) или заменить его в команде.
+
+## Server-to-server lookup
+
+Плагин владеет server-to-server API для связки `guid <-> topic_id`.
+
+Для включения lookup endpoint'ов задайте отдельный secret setting:
+
+```text
+discourse_new_topic_field_lookup_token
+```
+
+Если setting пустой или URL token неверный, endpoint вернет `403`:
+
+```json
+{
+  "ok": false,
+  "error": "invalid_token"
+}
+```
+
+Endpoint'ы не требуют Discourse login, session или API key. Доступ контролируется только URL token'ом.
+
+### Поиск темы по GUID
+
+```text
+GET /topic-guid-fields/topics/by-guid/:guid/:token.json
+```
+
+Если тема найдена:
+
+```json
+{
+  "ok": true,
+  "found": true,
+  "topic_id": 123,
+  "guid": "09abcfac-0e44-11f1-86e9-a94ec75f6b04",
+  "title": "Topic title",
+  "slug": "topic-title",
+  "url": "https://forum.example.com/t/topic-title/123",
+  "created_at": "2026-07-09T10:00:00Z",
+  "approval_status": {
+    "available": false,
+    "data": null
+  }
+}
+```
+
+Если GUID не найден:
+
+```json
+{
+  "ok": true,
+  "found": false,
+  "topic_id": null,
+  "guid": "09abcfac-0e44-11f1-86e9-a94ec75f6b04",
+  "approval_status": {
+    "available": false,
+    "data": null
+  }
+}
+```
+
+### Поиск GUID по теме
+
+```text
+GET /topic-guid-fields/topics/by-topic/:topic_id/:token.json
+```
+
+Если тема найдена:
+
+```json
+{
+  "ok": true,
+  "found": true,
+  "topic_id": 123,
+  "guid": "09abcfac-0e44-11f1-86e9-a94ec75f6b04",
+  "title": "Topic title",
+  "slug": "topic-title",
+  "url": "https://forum.example.com/t/topic-title/123",
+  "created_at": "2026-07-09T10:00:00Z",
+  "approval_status": {
+    "available": false,
+    "data": null
+  }
+}
+```
+
+Если тема не найдена:
+
+```json
+{
+  "ok": true,
+  "found": false,
+  "topic_id": 999999,
+  "guid": null,
+  "approval_status": {
+    "available": false,
+    "data": null
+  }
+}
+```
+
+Если установлен `discourse-tz-approval` и доступен `TzApproval.topic_status_payload(topic)`, поле `approval_status.data` будет заполнено данными approval-плагина. Без approval-плагина GUID lookup работает независимо.

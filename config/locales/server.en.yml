@@ -4,6 +4,7 @@ en:
     discourse_new_topic_field_allowed_groups: "Groups allowed to view and edit task GUIDs on existing topics"
     discourse_new_topic_field_require_signature: "Require a valid HMAC signature for task GUID links"
     discourse_new_topic_field_signature_secret: "Secret used to verify HMAC signatures for task GUID links"
+    discourse_new_topic_field_lookup_token: "Secret URL token for server-to-server GUID lookup endpoints"
   discourse_new_topic_field:
     errors:
       guid_required: "Task GUID is required."

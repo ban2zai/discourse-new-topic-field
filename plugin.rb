@@ -6,6 +6,7 @@
 # authors: ban2zai
 # required_version: 2.7.0
 
+require "digest"
 require "openssl"
 
 enabled_site_setting :discourse_new_topic_field_enabled
@@ -117,6 +118,17 @@ module ::DiscourseNewTopicField
     topic_id ? Topic.find_by(id: topic_id) : nil
   end
 
+  def self.lookup_token_valid?(token)
+    configured_token = SiteSetting.discourse_new_topic_field_lookup_token.to_s
+    provided_token = token.to_s
+
+    return false if configured_token.blank? || provided_token.blank?
+
+    configured_digest = Digest::SHA256.hexdigest(configured_token)
+    provided_digest = Digest::SHA256.hexdigest(provided_token)
+    ActiveSupport::SecurityUtils.secure_compare(configured_digest, provided_digest)
+  end
+
   def self.handle_post_created(post, opts)
     return unless SiteSetting.discourse_new_topic_field_enabled
     return unless post.post_number == 1
@@ -186,6 +198,18 @@ after_initialize do
 
     get "/new-topic-field/signature/validate" =>
           "discourse_new_topic_field/topics#validate_signature",
+        defaults: {
+          format: :json,
+        }
+
+    get "/topic-guid-fields/topics/by-guid/:guid/:token" =>
+          "discourse_new_topic_field/topics#by_guid",
+        defaults: {
+          format: :json,
+        }
+
+    get "/topic-guid-fields/topics/by-topic/:topic_id/:token" =>
+          "discourse_new_topic_field/topics#by_topic",
         defaults: {
           format: :json,
         }

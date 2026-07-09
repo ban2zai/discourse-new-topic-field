@@ -14,3 +14,7 @@ plugins:
     default: ""
     type: string
     secret: true
+  discourse_new_topic_field_lookup_token:
+    default: ""
+    type: string
+    secret: true
