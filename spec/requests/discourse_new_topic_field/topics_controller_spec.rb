@@ -80,6 +80,16 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
       expect(response.status).to eq(200)
     end
 
+    it "works when Discourse requires login globally" do
+      SiteSetting.login_required = true
+      store_guid(topic)
+
+      get "/topic-guid-fields/topics/by-guid/#{guid}/#{lookup_token}.json"
+
+      expect(response.status).to eq(200)
+      expect(response.parsed_body).to include("ok" => true, "found" => true, "topic_id" => topic.id)
+    end
+
     it "returns found false for an unknown guid" do
       unknown_guid = "unknown-guid"
 
@@ -161,6 +171,16 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
 
       expect(response.status).to eq(200)
       expect(response.parsed_body["guid"]).to eq(guid)
+    end
+
+    it "works when Discourse requires login globally" do
+      SiteSetting.login_required = true
+      store_guid(topic)
+
+      get "/topic-guid-fields/topics/by-topic/#{topic.id}/#{lookup_token}.json"
+
+      expect(response.status).to eq(200)
+      expect(response.parsed_body).to include("ok" => true, "found" => true, "topic_id" => topic.id)
     end
 
     it "returns found false for an unknown topic id" do

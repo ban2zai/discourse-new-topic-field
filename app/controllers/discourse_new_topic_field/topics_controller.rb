@@ -4,6 +4,8 @@ module DiscourseNewTopicField
   class TopicsController < ::ApplicationController
     requires_plugin DiscourseNewTopicField::PLUGIN_NAME
 
+    skip_before_action :redirect_to_login_if_required, only: %i[by_guid by_topic]
+
     before_action :ensure_enabled
     before_action :ensure_lookup_token, only: %i[by_guid by_topic]
     before_action :ensure_logged_in, only: %i[update_guid destroy_guid]
