@@ -4,7 +4,8 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
   fab!(:group)
   fab!(:allowed_user) { Fabricate(:user) }
   fab!(:regular_user) { Fabricate(:user) }
-  fab!(:topic) { Fabricate(:topic, user: regular_user) }
+  fab!(:category)
+  fab!(:topic) { Fabricate(:topic, category: category, user: regular_user) }
   fab!(:second_topic) { Fabricate(:topic) }
 
   let(:guid) { "09abcfac-0e44-11f1-86e9-a94ec75f6b04" }
@@ -35,6 +36,122 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
           secret: SiteSetting.discourse_new_topic_field_signature_secret,
         ),
     }
+  end
+
+  def empty_solution_response
+    {
+      "can_set_solution" => false,
+      "has_solution" => false,
+      "solution" => {
+        "post_id" => nil,
+        "marked_at" => nil,
+        "marked_by" => {
+          "id" => nil,
+          "username" => nil,
+        },
+        "post_author" => {
+          "id" => nil,
+          "username" => nil,
+        },
+      },
+    }
+  end
+
+  def expected_category_response
+    {
+      "category_name" => category.name,
+      "category_id" => category.id,
+      "category_slug" => category.slug,
+    }
+  end
+
+  def stub_approval_payload
+    stub_const(
+      "TzApproval",
+      Class.new do
+        def self.topic_status_payload(topic)
+          {
+            ok: true,
+            found: true,
+            topic_id: topic.id,
+            is_tz: true,
+            ss_approved: false,
+            ss_approved_by: {
+              id: nil,
+              username: nil,
+              at: nil,
+            },
+            approvals: [
+              {
+                profile_prefix: "tz",
+                is_applicable: false,
+                approved: false,
+                approved_by: {
+                  id: nil,
+                  username: nil,
+                  at: nil,
+                },
+              },
+              {
+                profile_prefix: "ss",
+                is_applicable: true,
+                approved: true,
+                approved_by: {
+                  id: topic.user.id,
+                  username: topic.user.username,
+                  at: "2026-07-10T01:55:19Z",
+                },
+              },
+              {
+                profile_prefix: "../unsafe",
+                is_applicable: true,
+                approved: true,
+                approved_by: {},
+              },
+            ],
+            can_set_solution: true,
+            has_solution: true,
+            solution: {
+              post_id: 999,
+            },
+          }
+        end
+      end,
+    )
+  end
+
+  def expected_approval_response
+    {
+      "is_tz" => false,
+      "tz_approved" => false,
+      "tz_approved_by" => {
+        "id" => nil,
+        "username" => nil,
+        "at" => nil,
+      },
+      "is_ss" => true,
+      "ss_approved" => true,
+      "ss_approved_by" => {
+        "id" => topic.user.id,
+        "username" => topic.user.username,
+        "at" => "2026-07-10T01:55:19Z",
+      },
+    }
+  end
+
+  def stub_solved_topic(solved_topic)
+    model = Class.new
+    model.define_singleton_method(:find_by) { |topic_id:| solved_topic if topic_id.present? }
+
+    solved_module = Module.new
+    solved_module.const_set(:SolvedTopic, model)
+    solved_module.const_set(:ENABLE_ACCEPTED_ANSWERS_CUSTOM_FIELD, "enable_accepted_answers")
+    stub_const("DiscourseSolved", solved_module)
+  end
+
+  def enable_solutions
+    category.custom_fields["enable_accepted_answers"] = "true"
+    category.save_custom_fields(true)
   end
 
   describe "GET /new-topic-field/topics" do
@@ -68,6 +185,8 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
       expect(body["topic_id"]).to eq(topic.id)
       expect(body["guid"]).to eq(guid)
       expect(body["url"]).to eq(Discourse.base_url + topic.relative_url)
+      expect(body["category"]).to eq(expected_category_response)
+      expect(body).to include(empty_solution_response)
       expect(body["approval_status"]).to eq("available" => false, "data" => nil)
     end
 
@@ -103,6 +222,10 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
       expect(body["topic_id"]).to eq(nil)
       expect(body["guid"]).to eq(unknown_guid)
       expect(body["approval_status"]).to eq("available" => false, "data" => nil)
+      expect(body).not_to have_key("category")
+      expect(body).not_to have_key("can_set_solution")
+      expect(body).not_to have_key("has_solution")
+      expect(body).not_to have_key("solution")
     end
 
     it "returns found false for an invalid guid" do
@@ -148,6 +271,8 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
       expect(body["topic_id"]).to eq(topic.id)
       expect(body["guid"]).to eq(guid)
       expect(body["url"]).to eq(Discourse.base_url + topic.relative_url)
+      expect(body["category"]).to eq(expected_category_response)
+      expect(body).to include(empty_solution_response)
       expect(body["approval_status"]).to eq("available" => false, "data" => nil)
     end
 
@@ -199,6 +324,23 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
           "data" => nil,
         },
       )
+      expect(response.parsed_body).not_to have_key("category")
+      expect(response.parsed_body).not_to have_key("can_set_solution")
+      expect(response.parsed_body).not_to have_key("has_solution")
+      expect(response.parsed_body).not_to have_key("solution")
+    end
+
+    it "returns null category fields when the topic has no category" do
+      topic.update!(category: nil)
+
+      get "/topic-guid-fields/topics/by-topic/#{topic.id}/#{lookup_token}.json"
+
+      expect(response.status).to eq(200)
+      expect(response.parsed_body["category"]).to eq(
+        "category_name" => nil,
+        "category_id" => nil,
+        "category_slug" => nil,
+      )
     end
 
     it "rejects an invalid token" do
@@ -229,15 +371,12 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
       expect(response.parsed_body["approval_status"]).to eq("available" => false, "data" => nil)
     end
 
-    it "returns approval status when TzApproval exposes a topic payload helper" do
+    it "keeps the approval wrapper stable when the integration fails" do
       stub_const(
         "TzApproval",
         Class.new do
-          def self.topic_status_payload(topic)
-            {
-              status: "approved",
-              topic_id: topic.id,
-            }
+          def self.topic_status_payload(_topic)
+            raise "approval unavailable"
           end
         end,
       )
@@ -246,13 +385,114 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
       get "/topic-guid-fields/topics/by-guid/#{guid}/#{lookup_token}.json"
 
       expect(response.status).to eq(200)
+      expect(response.parsed_body["approval_status"]).to eq("available" => false, "data" => nil)
+    end
+
+    it "returns only dynamic profile fields for lookup by guid" do
+      stub_approval_payload
+      store_guid(topic)
+
+      get "/topic-guid-fields/topics/by-guid/#{guid}/#{lookup_token}.json"
+
+      expect(response.status).to eq(200)
       expect(response.parsed_body["approval_status"]).to eq(
         "available" => true,
-        "data" => {
-          "status" => "approved",
-          "topic_id" => topic.id,
+        "data" => expected_approval_response,
+      )
+      expect(response.parsed_body).to include(empty_solution_response)
+      expect(response.parsed_body.keys).to contain_exactly(
+        "ok",
+        "found",
+        "topic_id",
+        "guid",
+        "title",
+        "slug",
+        "url",
+        "created_at",
+        "category",
+        "can_set_solution",
+        "has_solution",
+        "solution",
+        "approval_status",
+      )
+    end
+
+    it "returns only dynamic profile fields for lookup by topic" do
+      stub_approval_payload
+      store_guid(topic)
+
+      get "/topic-guid-fields/topics/by-topic/#{topic.id}/#{lookup_token}.json"
+
+      expect(response.status).to eq(200)
+      expect(response.parsed_body["approval_status"]).to eq(
+        "available" => true,
+        "data" => expected_approval_response,
+      )
+    end
+  end
+
+  describe "optional solved integration" do
+    it "returns solution data independently from approval availability" do
+      enable_solutions
+      hide_const("TzApproval")
+      answer_post = Fabricate(:post, topic: topic, user: regular_user, post_number: 2)
+      marked_at = Time.zone.parse("2026-07-10 02:00:00 UTC")
+      solved_topic =
+        Struct
+          .new(:answer_post_id, :accepter_user_id, :created_at, keyword_init: true)
+          .new(
+            answer_post_id: answer_post.id,
+            accepter_user_id: allowed_user.id,
+            created_at: marked_at,
+          )
+      stub_solved_topic(solved_topic)
+      store_guid(topic)
+
+      get "/topic-guid-fields/topics/by-guid/#{guid}/#{lookup_token}.json"
+
+      expect(response.status).to eq(200)
+      expect(response.parsed_body).to include(
+        "can_set_solution" => true,
+        "has_solution" => true,
+        "solution" => {
+          "post_id" => answer_post.id,
+          "marked_at" => marked_at.iso8601(3),
+          "marked_by" => {
+            "id" => allowed_user.id,
+            "username" => allowed_user.username,
+          },
+          "post_author" => {
+            "id" => regular_user.id,
+            "username" => regular_user.username,
+          },
+        },
+        "approval_status" => {
+          "available" => false,
+          "data" => nil,
         },
       )
+    end
+
+    it "allows setting a solution when the category is enabled and the topic has a reply" do
+      enable_solutions
+      Fabricate(:post, topic: topic, user: regular_user, post_number: 2)
+      stub_solved_topic(nil)
+
+      get "/topic-guid-fields/topics/by-topic/#{topic.id}/#{lookup_token}.json"
+
+      expect(response.status).to eq(200)
+      expect(response.parsed_body).to include(
+        empty_solution_response.merge("can_set_solution" => true),
+      )
+    end
+
+    it "returns the empty solution structure when DiscourseSolved is absent" do
+      hide_const("DiscourseSolved")
+
+      get "/topic-guid-fields/topics/by-topic/#{topic.id}/#{lookup_token}.json"
+
+      expect(response.status).to eq(200)
+      expect(response.parsed_body).to include(empty_solution_response)
     end
   end
 

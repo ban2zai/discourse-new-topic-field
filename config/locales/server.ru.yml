@@ -1,6 +1,7 @@
 ru:
   site_settings:
     discourse_new_topic_field_enabled: "Включить GUID задачи для тем"
+    discourse_new_topic_field_show_empty_status: "Показывать плашку «GUID задачи не получен», если GUID отсутствует"
     discourse_new_topic_field_allowed_groups: "Группы, которым разрешено видеть и менять GUID задачи в существующих темах"
     discourse_new_topic_field_require_signature: "Требовать HMAC-подпись для ссылок с GUID задачи"
     discourse_new_topic_field_signature_secret: "Секрет для проверки HMAC-подписи ссылок с GUID задачи"

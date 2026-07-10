@@ -39,7 +39,10 @@ export default class TaskGuidComposerField extends Component {
   get shouldRender() {
     return (
       this.siteSettings.discourse_new_topic_field_enabled &&
-      this.model?.action === "createTopic"
+      this.model?.action === "createTopic" &&
+      (this.hasGuid ||
+        this.invalidSignature ||
+        this.siteSettings.discourse_new_topic_field_show_empty_status)
     );
   }
 

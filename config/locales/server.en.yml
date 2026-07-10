@@ -1,6 +1,7 @@
 en:
   site_settings:
     discourse_new_topic_field_enabled: "Enable task GUID fields for topics"
+    discourse_new_topic_field_show_empty_status: "Show the 'Task GUID not received' badge when a GUID is missing"
     discourse_new_topic_field_allowed_groups: "Groups allowed to view and edit task GUIDs on existing topics"
     discourse_new_topic_field_require_signature: "Require a valid HMAC signature for task GUID links"
     discourse_new_topic_field_signature_secret: "Secret used to verify HMAC signatures for task GUID links"

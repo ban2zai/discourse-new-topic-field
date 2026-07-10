@@ -119,6 +119,8 @@ module DiscourseNewTopicField
 
     def lookup_payload(topic, topic_id: nil, guid: nil)
       if topic.present?
+        solution_status = solution_status_payload(topic)
+
         {
           ok: true,
           found: true,
@@ -128,6 +130,10 @@ module DiscourseNewTopicField
           slug: topic.slug,
           url: Discourse.base_url + topic.relative_url,
           created_at: topic.created_at,
+          category: category_payload(topic),
+          can_set_solution: solution_status[:can_set_solution],
+          has_solution: solution_status[:has_solution],
+          solution: solution_status[:solution],
           approval_status: approval_status_payload(topic),
         }
       else
@@ -151,12 +157,32 @@ module DiscourseNewTopicField
       return approval_status_unavailable unless defined?(::TzApproval)
       return approval_status_unavailable unless ::TzApproval.respond_to?(:topic_status_payload)
 
+      payload = ::TzApproval.topic_status_payload(topic)
+      approvals = payload[:approvals] || payload["approvals"]
+
       {
         available: true,
-        data: ::TzApproval.topic_status_payload(topic),
+        data: approval_profiles_payload(approvals),
       }
     rescue StandardError
-      approval_status_unavailable.merge(error: "unavailable")
+      approval_status_unavailable
+    end
+
+    def approval_profiles_payload(approvals)
+      Array(approvals).each_with_object({}) do |approval, payload|
+        approval = approval.with_indifferent_access
+        prefix = approval[:profile_prefix].to_s
+        next unless prefix.match?(/\A[a-z0-9_]+\z/)
+
+        approved_by = (approval[:approved_by] || {}).with_indifferent_access
+        payload["is_#{prefix}"] = approval[:is_applicable] == true
+        payload["#{prefix}_approved"] = approval[:approved] == true
+        payload["#{prefix}_approved_by"] = {
+          id: approved_by[:id],
+          username: approved_by[:username],
+          at: approved_by[:at],
+        }
+      end
     end
 
     def approval_status_unavailable
@@ -164,6 +190,81 @@ module DiscourseNewTopicField
         available: false,
         data: nil,
       }
+    end
+
+    def category_payload(topic)
+      category = topic.category
+
+      {
+        category_name: category&.name,
+        category_id: topic.category_id,
+        category_slug: category&.slug,
+      }
+    end
+
+    def solution_status_payload(topic)
+      return empty_solution_status unless defined?(::DiscourseSolved::SolvedTopic)
+
+      solved_topic = ::DiscourseSolved::SolvedTopic.find_by(topic_id: topic.id)
+      answer_post_id = solved_topic&.answer_post_id
+      answer_post = Post.find_by(id: answer_post_id) if answer_post_id.present?
+      solution_marker = User.find_by(id: solved_topic.accepter_user_id) if solved_topic.present?
+      has_solution = answer_post_id.present?
+
+      {
+        can_set_solution:
+          solved_enabled_for_topic?(topic) && (has_solution || topic_has_reply?(topic)),
+        has_solution: has_solution,
+        solution: {
+          post_id: answer_post_id,
+          marked_at: solved_topic&.created_at,
+          marked_by: {
+            id: solution_marker&.id,
+            username: solution_marker&.username,
+          },
+          post_author: {
+            id: answer_post&.user_id,
+            username: answer_post&.user&.username,
+          },
+        },
+      }
+    rescue ActiveRecord::NoDatabaseError, ActiveRecord::StatementInvalid
+      empty_solution_status
+    end
+
+    def empty_solution_status
+      {
+        can_set_solution: false,
+        has_solution: false,
+        solution: {
+          post_id: nil,
+          marked_at: nil,
+          marked_by: {
+            id: nil,
+            username: nil,
+          },
+          post_author: {
+            id: nil,
+            username: nil,
+          },
+        },
+      }
+    end
+
+    def solved_enabled_for_topic?(topic)
+      field_name =
+        if defined?(::DiscourseSolved::ENABLE_ACCEPTED_ANSWERS_CUSTOM_FIELD)
+          ::DiscourseSolved::ENABLE_ACCEPTED_ANSWERS_CUSTOM_FIELD
+        else
+          "enable_accepted_answers"
+        end
+      value = CategoryCustomField.find_by(category_id: topic.category_id, name: field_name)&.value
+
+      value == true || value == "true" || value == "t" || value == "1"
+    end
+
+    def topic_has_reply?(topic)
+      Post.where(topic_id: topic.id, deleted_at: nil).where("post_number > 1").exists?
     end
 
     def topic_payload(topic, guid)

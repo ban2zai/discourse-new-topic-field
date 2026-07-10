@@ -2,6 +2,9 @@ plugins:
   discourse_new_topic_field_enabled:
     default: true
     client: true
+  discourse_new_topic_field_show_empty_status:
+    default: true
+    client: true
   discourse_new_topic_field_allowed_groups:
     default: ""
     type: group_list

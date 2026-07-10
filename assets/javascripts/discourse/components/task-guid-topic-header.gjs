@@ -51,6 +51,18 @@ export default class TaskGuidTopicHeader extends Component {
     return Boolean(this.savedGuid?.trim());
   }
 
+  get showEmptyStatus() {
+    return this.siteSettings.discourse_new_topic_field_show_empty_status;
+  }
+
+  get showStatusBadge() {
+    return this.hasGuid || this.showEmptyStatus;
+  }
+
+  get shouldRenderContent() {
+    return this.showStatusBadge || this.canManage;
+  }
+
   get badgeClasses() {
     const stateClass = this.hasGuid
       ? "new-topic-field-status-badge--linked"
@@ -78,6 +90,10 @@ export default class TaskGuidTopicHeader extends Component {
   }
 
   moveIntoTopicHeader = modifier((element) => {
+    if (!this.shouldRenderContent) {
+      return;
+    }
+
     let frame = null;
     let placeholder = null;
 
@@ -277,32 +293,48 @@ export default class TaskGuidTopicHeader extends Component {
       hidden
       {{this.moveIntoTopicHeader}}
     >
-      <div class={{this.badgeClasses}}>
-        <div class="new-topic-field-status-badge__content">
-          <div class="new-topic-field-status-badge__label">
-            {{this.badgeLabel}}
+      {{#if this.showStatusBadge}}
+        <div class={{this.badgeClasses}}>
+          <div class="new-topic-field-status-badge__content">
+            <div class="new-topic-field-status-badge__label">
+              {{this.badgeLabel}}
+            </div>
+
+            {{#if this.hasGuid}}
+              <div class="new-topic-field-status-badge__guid">
+                {{this.savedGuid}}
+              </div>
+            {{/if}}
           </div>
 
-          {{#if this.hasGuid}}
-            <div class="new-topic-field-status-badge__guid">
-              {{this.savedGuid}}
-            </div>
+          {{#if this.canManage}}
+            {{#unless this.editing}}
+              <button
+                type="button"
+                class="btn btn-default btn-small new-topic-field-status-badge__action"
+                disabled={{this.saving}}
+                {{on "click" this.startEdit}}
+              >
+                {{this.editLabel}}
+              </button>
+            {{/unless}}
           {{/if}}
         </div>
-
+      {{else}}
         {{#if this.canManage}}
           {{#unless this.editing}}
             <button
               type="button"
-              class="btn btn-default btn-small new-topic-field-status-badge__action"
+              class="btn btn-default btn-small new-topic-field-topic-header__button"
+              data-new-topic-field-add-guid
               disabled={{this.saving}}
               {{on "click" this.startEdit}}
             >
-              {{this.editLabel}}
+              {{i18n "discourse_new_topic_field.topic.add"}}
             </button>
           {{/unless}}
         {{/if}}
-      </div>
+      {{/if}}
 
       {{#if this.canManage}}
         {{#if this.editing}}

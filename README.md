@@ -83,12 +83,54 @@ GET /topic-guid-fields/topics/by-guid/:guid/:token.json
   "slug": "topic-title",
   "url": "https://forum.example.com/t/topic-title/123",
   "created_at": "2026-07-09T10:00:00Z",
+  "category": {
+    "category_name": "Вторая линия",
+    "category_id": 42,
+    "category_slug": "second-line"
+  },
+  "can_set_solution": true,
+  "has_solution": true,
+  "solution": {
+    "post_id": 456,
+    "marked_at": "2026-07-10T02:00:00.000Z",
+    "marked_by": {
+      "id": 10,
+      "username": "moderator"
+    },
+    "post_author": {
+      "id": 20,
+      "username": "author"
+    }
+  },
   "approval_status": {
-    "available": false,
-    "data": null
+    "available": true,
+    "data": {
+      "is_tz": false,
+      "tz_approved": false,
+      "tz_approved_by": {
+        "id": null,
+        "username": null,
+        "at": null
+      },
+      "is_ss": true,
+      "ss_approved": true,
+      "ss_approved_by": {
+        "id": 10,
+        "username": "moderator",
+        "at": "2026-07-10T01:55:19.000Z"
+      }
+    }
   }
 }
 ```
+
+`category`, `can_set_solution`, `has_solution` и `solution` относятся к теме и находятся в корне ответа. Данные каждого approval-профиля находятся только в `approval_status.data` и формируются по его prefix:
+
+- `is_<prefix>`;
+- `<prefix>_approved`;
+- `<prefix>_approved_by`.
+
+Внутренний массив `approvals` наружу не возвращается. Solution вычисляется независимо через `discourse-solved`; если интеграция недоступна, endpoint возвращает `false`, `false` и пустую структуру `solution`.
 
 Если GUID не найден:
 
@@ -111,24 +153,7 @@ GET /topic-guid-fields/topics/by-guid/:guid/:token.json
 GET /topic-guid-fields/topics/by-topic/:topic_id/:token.json
 ```
 
-Если тема найдена:
-
-```json
-{
-  "ok": true,
-  "found": true,
-  "topic_id": 123,
-  "guid": "09abcfac-0e44-11f1-86e9-a94ec75f6b04",
-  "title": "Topic title",
-  "slug": "topic-title",
-  "url": "https://forum.example.com/t/topic-title/123",
-  "created_at": "2026-07-09T10:00:00Z",
-  "approval_status": {
-    "available": false,
-    "data": null
-  }
-}
-```
+Если тема найдена, endpoint возвращает тот же полный контракт, что и поиск по GUID выше. Отличается только направление поиска: `topic_id` берётся из URL, а `guid` — из custom field темы и может быть `null`.
 
 Если тема не найдена:
 
@@ -145,4 +170,4 @@ GET /topic-guid-fields/topics/by-topic/:topic_id/:token.json
 }
 ```
 
-Если установлен `discourse-tz-approval` и доступен `TzApproval.topic_status_payload(topic)`, поле `approval_status.data` будет заполнено данными approval-плагина. Без approval-плагина GUID lookup работает независимо.
+Если установлен `discourse-tz-approval` и доступен `TzApproval.topic_status_payload(topic)`, `approval_status.data` будет заполнен динамическими полями его профилей. Без approval-плагина GUID lookup и solution-интеграция продолжают работать независимо.
