@@ -48,7 +48,7 @@ export default apiInitializer((api) => {
   api.serializeOnCreate("task_guid_nonce");
   api.serializeOnCreate("task_guid_sig");
   api.renderInOutlet("composer-fields", TaskGuidComposerField);
-  api.renderInOutlet("topic-title", TaskGuidTopicHeader);
+  api.renderInOutlet("topic-above-posts", TaskGuidTopicHeader);
 
   api.onPageChange((url) => captureTaskGuid(url));
 

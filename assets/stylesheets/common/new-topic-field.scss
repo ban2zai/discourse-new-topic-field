@@ -91,6 +91,10 @@
   width: 100%;
 }
 
+.posts-wrapper > span:has([data-new-topic-field-topic-header]) {
+  display: block;
+}
+
 .new-topic-field-topic-header {
   align-items: center;
   box-sizing: border-box;
@@ -98,11 +102,7 @@
   flex: 1 0 100%;
   flex-wrap: wrap;
   gap: 0.5em;
-  margin-top: 0.75em;
-  max-width: calc(
-    var(--topic-body-width) + (var(--topic-body-width-padding) * 2) +
-      var(--topic-avatar-width)
-  );
+  margin-bottom: 0.75em;
   width: 100%;
 }
 

@@ -25,6 +25,8 @@ export default class TaskGuidTopicHeader extends Component {
 
   @tracked guid = "";
   @tracked editingTopicId = null;
+  @tracked visibleGuid = null;
+  @tracked visibleGuidTopicId = null;
   @tracked saving = false;
 
   static shouldRender(args) {
@@ -38,6 +40,10 @@ export default class TaskGuidTopicHeader extends Component {
   }
 
   get savedGuid() {
+    if (this.visibleGuidTopicId === this.topic?.id) {
+      return this.visibleGuid || "";
+    }
+
     return this.topic?.task_guid || "";
   }
 
@@ -96,6 +102,14 @@ export default class TaskGuidTopicHeader extends Component {
 
   @action
   resetEditingForCurrentTopic() {
+    if (
+      this.visibleGuidTopicId !== null &&
+      this.visibleGuidTopicId !== this.topic?.id
+    ) {
+      this.visibleGuid = null;
+      this.visibleGuidTopicId = null;
+    }
+
     if (
       this.editingTopicId !== null &&
       this.editingTopicId !== this.topic?.id
@@ -166,6 +180,8 @@ export default class TaskGuidTopicHeader extends Component {
       setTopicGuid(topic, savedGuid);
 
       if (this.topic?.id === topic.id) {
+        this.visibleGuid = savedGuid;
+        this.visibleGuidTopicId = topic.id;
         this.guid = savedGuid;
         this.editingTopicId = null;
       }
@@ -209,6 +225,8 @@ export default class TaskGuidTopicHeader extends Component {
       setTopicGuid(topic, null);
 
       if (this.topic?.id === topic.id) {
+        this.visibleGuid = "";
+        this.visibleGuidTopicId = topic.id;
         this.guid = "";
         this.editingTopicId = null;
       }

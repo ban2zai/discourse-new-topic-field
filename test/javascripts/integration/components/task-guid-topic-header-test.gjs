@@ -10,12 +10,17 @@ import { module, test } from "qunit";
 import { setupRenderingTest } from "discourse/tests/helpers/component-test";
 import TaskGuidTopicHeader from "discourse/plugins/discourse-new-topic-field/discourse/components/task-guid-topic-header";
 
-const TopicHeaderFixture = <template>
-  <div id="topic-title">
-    <div class="title-wrapper">
-      <span class="topic-category"></span>
+const TopicAbovePostsFixture = <template>
+  <div class="container posts">
+    <div class="row">
+      <section class="topic-area">
+        <div class="posts-wrapper">
+          <span>
+            <TaskGuidTopicHeader @model={{@topic}} />
+          </span>
+        </div>
+      </section>
     </div>
-    <TaskGuidTopicHeader @model={{@topic}} />
   </div>
 </template>;
 
@@ -88,7 +93,7 @@ module("Integration | Component | task-guid-topic-header", function (hooks) {
     this.set("topic", topicA);
 
     await render(
-      <template><TopicHeaderFixture @topic={{this.topic}} /></template>
+      <template><TopicAbovePostsFixture @topic={{this.topic}} /></template>
     );
 
     assert.strictEqual(
@@ -99,7 +104,7 @@ module("Integration | Component | task-guid-topic-header", function (hooks) {
     assert.strictEqual(
       document.querySelector("[data-new-topic-field-topic-header]")
         .parentElement,
-      document.querySelector("#topic-title"),
+      document.querySelector(".posts-wrapper > span"),
       "keeps the component inside the official outlet parent"
     );
     assert.dom(".new-topic-field-status-badge__guid").hasText("guid-a");
@@ -161,7 +166,7 @@ module("Integration | Component | task-guid-topic-header", function (hooks) {
     this.set("topic", topicA);
 
     await render(
-      <template><TopicHeaderFixture @topic={{this.topic}} /></template>
+      <template><TopicAbovePostsFixture @topic={{this.topic}} /></template>
     );
 
     await click(".new-topic-field-status-badge__action");
@@ -206,7 +211,7 @@ module("Integration | Component | task-guid-topic-header", function (hooks) {
     this.set("topic", topicA);
 
     await render(
-      <template><TopicHeaderFixture @topic={{this.topic}} /></template>
+      <template><TopicAbovePostsFixture @topic={{this.topic}} /></template>
     );
 
     await click(".new-topic-field-status-badge__action");
@@ -229,5 +234,37 @@ module("Integration | Component | task-guid-topic-header", function (hooks) {
     assert.strictEqual(topicB.task_guid, "guid-b");
     assert.dom(".new-topic-field-status-badge__guid").hasText("guid-b");
     assert.dom(".new-topic-field-topic-header__editor").doesNotExist();
+  });
+
+  test("updates the visible GUID immediately after save and delete", async function (assert) {
+    const topic = buildTopic({ id: 1, guid: "guid-before" });
+
+    window.fetch = async (_url, options) => ({
+      ok: true,
+      status: 200,
+      json: async () =>
+        options.method === "PUT" ? { guid: "guid-after" } : {},
+    });
+    window.confirm = () => true;
+    this.set("topic", topic);
+
+    await render(
+      <template><TopicAbovePostsFixture @topic={{this.topic}} /></template>
+    );
+
+    await click(".new-topic-field-status-badge__action");
+    await fillIn("[data-new-topic-field-topic-guid]", "guid-after");
+    await click(".btn-primary");
+
+    assert.strictEqual(topic.task_guid, "guid-after");
+    assert.dom(".new-topic-field-status-badge__guid").hasText("guid-after");
+    assert.dom(".new-topic-field-topic-header__editor").doesNotExist();
+
+    await click(".new-topic-field-status-badge__action");
+    await click(".btn-danger");
+
+    assert.strictEqual(topic.task_guid, null);
+    assert.dom(".new-topic-field-status-badge__guid").doesNotExist();
+    assert.dom("[data-new-topic-field-add-guid]").exists();
   });
 });
