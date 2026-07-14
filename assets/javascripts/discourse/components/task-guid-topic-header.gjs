@@ -1,9 +1,10 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
+import didUpdate from "@ember/render-modifiers/modifiers/did-update";
+import willDestroy from "@ember/render-modifiers/modifiers/will-destroy";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
 import { on } from "@ember/modifier";
-import { modifier } from "ember-modifier";
 import { i18n } from "discourse-i18n";
 
 function csrfToken() {
@@ -23,15 +24,8 @@ export default class TaskGuidTopicHeader extends Component {
   @service dialog;
 
   @tracked guid = "";
-  @tracked savedGuid = "";
-  @tracked editing = false;
+  @tracked editingTopicId = null;
   @tracked saving = false;
-
-  constructor(owner, args) {
-    super(owner, args);
-    this.savedGuid = this.topic?.task_guid || "";
-    this.guid = this.savedGuid;
-  }
 
   static shouldRender(args) {
     return (
@@ -41,6 +35,14 @@ export default class TaskGuidTopicHeader extends Component {
 
   get topic() {
     return this.args.outletArgs?.model || this.args.model;
+  }
+
+  get savedGuid() {
+    return this.topic?.task_guid || "";
+  }
+
+  get editing() {
+    return this.editingTopicId === this.topic?.id;
   }
 
   get canManage() {
@@ -60,7 +62,10 @@ export default class TaskGuidTopicHeader extends Component {
   }
 
   get shouldRenderContent() {
-    return this.showStatusBadge || this.canManage;
+    return (
+      Boolean(this.topic?.can_view_task_guid) &&
+      (this.showStatusBadge || this.canManage)
+    );
   }
 
   get badgeClasses() {
@@ -89,93 +94,27 @@ export default class TaskGuidTopicHeader extends Component {
       : i18n("discourse_new_topic_field.topic.save");
   }
 
-  moveIntoTopicHeader = modifier((element) => {
-    if (!this.shouldRenderContent) {
-      return;
+  @action
+  resetEditingForCurrentTopic() {
+    if (
+      this.editingTopicId !== null &&
+      this.editingTopicId !== this.topic?.id
+    ) {
+      this.guid = "";
+      this.editingTopicId = null;
     }
-
-    let frame = null;
-    let placeholder = null;
-
-    element.style.display = "none";
-    element.setAttribute("aria-hidden", "true");
-
-    if (element.parentNode) {
-      placeholder = document.createComment("new-topic-field-topic-header");
-      element.parentNode.insertBefore(placeholder, element);
-    }
-
-    const syncWidth = () => {
-      const postFrame = document.querySelector(
-        "article#post_1, .topic-post:first-of-type article.boxed, .topic-post:first-of-type .boxed"
-      );
-      const width = postFrame?.getBoundingClientRect().width;
-
-      if (width) {
-        element.style.setProperty(
-          "--new-topic-field-topic-width",
-          `${Math.round(width)}px`
-        );
-      }
-    };
-
-    const move = () => {
-      const topicCategory = document.querySelector("#topic-title .topic-category");
-      const target = topicCategory?.parentElement;
-
-      if (!target) {
-        return;
-      }
-
-      element.removeAttribute("hidden");
-      element.removeAttribute("aria-hidden");
-      element.style.removeProperty("display");
-
-      if (
-        element.parentElement !== target ||
-        element.previousElementSibling !== topicCategory
-      ) {
-        topicCategory.insertAdjacentElement("afterend", element);
-      }
-
-      syncWidth();
-    };
-
-    const scheduleMove = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(move);
-    };
-
-    move();
-    scheduleMove();
-
-    const observer = new MutationObserver(scheduleMove);
-    observer.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener("resize", scheduleMove);
-
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      window.removeEventListener("resize", scheduleMove);
-
-      if (placeholder?.parentNode && element.parentNode !== placeholder.parentNode) {
-        placeholder.parentNode.insertBefore(element, placeholder);
-      }
-
-      placeholder?.remove();
-    };
-  });
+  }
 
   @action
   startEdit() {
     this.guid = this.savedGuid;
-    this.editing = true;
+    this.editingTopicId = this.topic?.id;
   }
 
   @action
   cancelEdit() {
     this.guid = this.savedGuid;
-    this.editing = false;
+    this.editingTopicId = null;
   }
 
   @action
@@ -194,11 +133,12 @@ export default class TaskGuidTopicHeader extends Component {
       return;
     }
 
+    const topic = this.topic;
     this.saving = true;
 
     try {
       const response = await fetch(
-        `/new-topic-field/topics/${this.topic.id}/guid.json`,
+        `/new-topic-field/topics/${topic.id}/guid.json`,
         {
           method: "PUT",
           credentials: "same-origin",
@@ -209,10 +149,12 @@ export default class TaskGuidTopicHeader extends Component {
 
       if (!response.ok) {
         if (response.status === 409) {
-          this.dialog.dialog({
-            type: "alert",
-            message: i18n("discourse_new_topic_field.topic.duplicate_guid"),
-          });
+          if (this.topic?.id === topic.id) {
+            this.dialog.dialog({
+              type: "alert",
+              message: i18n("discourse_new_topic_field.topic.duplicate_guid"),
+            });
+          }
           return;
         }
 
@@ -220,15 +162,20 @@ export default class TaskGuidTopicHeader extends Component {
       }
 
       const payload = await response.json();
-      this.savedGuid = payload.guid || guid;
-      this.guid = this.savedGuid;
-      this.editing = false;
-      setTopicGuid(this.topic, this.savedGuid);
+      const savedGuid = payload.guid || guid;
+      setTopicGuid(topic, savedGuid);
+
+      if (this.topic?.id === topic.id) {
+        this.guid = savedGuid;
+        this.editingTopicId = null;
+      }
     } catch {
-      this.dialog.dialog({
-        type: "alert",
-        message: i18n("discourse_new_topic_field.topic.save_failed"),
-      });
+      if (this.topic?.id === topic.id) {
+        this.dialog.dialog({
+          type: "alert",
+          message: i18n("discourse_new_topic_field.topic.save_failed"),
+        });
+      }
     } finally {
       this.saving = false;
     }
@@ -242,11 +189,12 @@ export default class TaskGuidTopicHeader extends Component {
   }
 
   async destroyGuid() {
+    const topic = this.topic;
     this.saving = true;
 
     try {
       const response = await fetch(
-        `/new-topic-field/topics/${this.topic.id}/guid.json`,
+        `/new-topic-field/topics/${topic.id}/guid.json`,
         {
           method: "DELETE",
           credentials: "same-origin",
@@ -258,15 +206,19 @@ export default class TaskGuidTopicHeader extends Component {
         throw new Error(`GUID delete failed with status ${response.status}`);
       }
 
-      this.savedGuid = "";
-      this.guid = "";
-      this.editing = false;
-      setTopicGuid(this.topic, null);
+      setTopicGuid(topic, null);
+
+      if (this.topic?.id === topic.id) {
+        this.guid = "";
+        this.editingTopicId = null;
+      }
     } catch {
-      this.dialog.dialog({
-        type: "alert",
-        message: i18n("discourse_new_topic_field.topic.delete_failed"),
-      });
+      if (this.topic?.id === topic.id) {
+        this.dialog.dialog({
+          type: "alert",
+          message: i18n("discourse_new_topic_field.topic.delete_failed"),
+        });
+      }
     } finally {
       this.saving = false;
     }
@@ -287,102 +239,104 @@ export default class TaskGuidTopicHeader extends Component {
   }
 
   <template>
-    <div
-      class="new-topic-field-topic-header"
-      data-new-topic-field-topic-header
-      hidden
-      {{this.moveIntoTopicHeader}}
-    >
-      {{#if this.showStatusBadge}}
-        <div class={{this.badgeClasses}}>
-          <div class="new-topic-field-status-badge__content">
-            <div class="new-topic-field-status-badge__label">
-              {{this.badgeLabel}}
+    {{#if this.shouldRenderContent}}
+      <div
+        class="new-topic-field-topic-header"
+        data-new-topic-field-topic-header
+        {{didUpdate this.resetEditingForCurrentTopic this.topic.id}}
+        {{willDestroy this.resetEditingForCurrentTopic}}
+      >
+        {{#if this.showStatusBadge}}
+          <div class={{this.badgeClasses}}>
+            <div class="new-topic-field-status-badge__content">
+              <div class="new-topic-field-status-badge__label">
+                {{this.badgeLabel}}
+              </div>
+
+              {{#if this.hasGuid}}
+                <div class="new-topic-field-status-badge__guid">
+                  {{this.savedGuid}}
+                </div>
+              {{/if}}
             </div>
 
-            {{#if this.hasGuid}}
-              <div class="new-topic-field-status-badge__guid">
-                {{this.savedGuid}}
-              </div>
+            {{#if this.canManage}}
+              {{#unless this.editing}}
+                <button
+                  type="button"
+                  class="btn btn-default btn-small new-topic-field-status-badge__action"
+                  disabled={{this.saving}}
+                  {{on "click" this.startEdit}}
+                >
+                  {{this.editLabel}}
+                </button>
+              {{/unless}}
             {{/if}}
           </div>
-
+        {{else}}
           {{#if this.canManage}}
             {{#unless this.editing}}
               <button
                 type="button"
-                class="btn btn-default btn-small new-topic-field-status-badge__action"
+                class="btn btn-default btn-small new-topic-field-topic-header__button"
+                data-new-topic-field-add-guid
                 disabled={{this.saving}}
                 {{on "click" this.startEdit}}
               >
-                {{this.editLabel}}
+                {{i18n "discourse_new_topic_field.topic.add"}}
               </button>
             {{/unless}}
           {{/if}}
-        </div>
-      {{else}}
-        {{#if this.canManage}}
-          {{#unless this.editing}}
-            <button
-              type="button"
-              class="btn btn-default btn-small new-topic-field-topic-header__button"
-              data-new-topic-field-add-guid
-              disabled={{this.saving}}
-              {{on "click" this.startEdit}}
-            >
-              {{i18n "discourse_new_topic_field.topic.add"}}
-            </button>
-          {{/unless}}
         {{/if}}
-      {{/if}}
 
-      {{#if this.canManage}}
-        {{#if this.editing}}
-          <div class="new-topic-field-topic-header__editor">
-            <label class="new-topic-field-topic-header__field">
-              <span>{{i18n "discourse_new_topic_field.guid_label"}}</span>
-              <input
-                type="text"
-                value={{this.guid}}
-                class="new-topic-field-input"
-                data-new-topic-field-topic-guid
-                {{on "input" this.updateGuid}}
-              />
-            </label>
+        {{#if this.canManage}}
+          {{#if this.editing}}
+            <div class="new-topic-field-topic-header__editor">
+              <label class="new-topic-field-topic-header__field">
+                <span>{{i18n "discourse_new_topic_field.guid_label"}}</span>
+                <input
+                  type="text"
+                  value={{this.guid}}
+                  class="new-topic-field-input"
+                  data-new-topic-field-topic-guid
+                  {{on "input" this.updateGuid}}
+                />
+              </label>
 
-            <div class="new-topic-field-topic-header__editor-actions">
-              <button
-                type="button"
-                class="btn btn-primary new-topic-field-topic-header__button"
-                disabled={{this.saving}}
-                {{on "click" this.saveGuid}}
-              >
-                {{this.saveLabel}}
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-flat new-topic-field-topic-header__button"
-                disabled={{this.saving}}
-                {{on "click" this.cancelEdit}}
-              >
-                {{i18n "discourse_new_topic_field.topic.cancel"}}
-              </button>
-
-              {{#if this.hasGuid}}
+              <div class="new-topic-field-topic-header__editor-actions">
                 <button
                   type="button"
-                  class="btn btn-danger new-topic-field-topic-header__button"
+                  class="btn btn-primary new-topic-field-topic-header__button"
                   disabled={{this.saving}}
-                  {{on "click" this.deleteGuid}}
+                  {{on "click" this.saveGuid}}
                 >
-                  {{i18n "discourse_new_topic_field.topic.delete"}}
+                  {{this.saveLabel}}
                 </button>
-              {{/if}}
+
+                <button
+                  type="button"
+                  class="btn btn-flat new-topic-field-topic-header__button"
+                  disabled={{this.saving}}
+                  {{on "click" this.cancelEdit}}
+                >
+                  {{i18n "discourse_new_topic_field.topic.cancel"}}
+                </button>
+
+                {{#if this.hasGuid}}
+                  <button
+                    type="button"
+                    class="btn btn-danger new-topic-field-topic-header__button"
+                    disabled={{this.saving}}
+                    {{on "click" this.deleteGuid}}
+                  >
+                    {{i18n "discourse_new_topic_field.topic.delete"}}
+                  </button>
+                {{/if}}
+              </div>
             </div>
-          </div>
+          {{/if}}
         {{/if}}
-      {{/if}}
-    </div>
+      </div>
+    {{/if}}
   </template>
 }

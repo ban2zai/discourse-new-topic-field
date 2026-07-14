@@ -99,7 +99,10 @@
   flex-wrap: wrap;
   gap: 0.5em;
   margin-top: 0.75em;
-  max-width: var(--new-topic-field-topic-width, 100%);
+  max-width: calc(
+    var(--topic-body-width) + (var(--topic-body-width-padding) * 2) +
+      var(--topic-avatar-width)
+  );
   width: 100%;
 }
 
