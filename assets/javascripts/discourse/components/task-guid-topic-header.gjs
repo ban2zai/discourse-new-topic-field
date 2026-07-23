@@ -6,6 +6,7 @@ import { action } from "@ember/object";
 import { service } from "@ember/service";
 import { on } from "@ember/modifier";
 import { i18n } from "discourse-i18n";
+import duplicateGuidMessage from "../lib/duplicate-guid-message";
 
 function csrfToken() {
   return document.querySelector("meta[name='csrf-token']")?.content;
@@ -164,9 +165,11 @@ export default class TaskGuidTopicHeader extends Component {
       if (!response.ok) {
         if (response.status === 409) {
           if (this.topic?.id === topic.id) {
+            const payload = await response.json();
+
             this.dialog.dialog({
               type: "alert",
-              message: i18n("discourse_new_topic_field.topic.duplicate_guid"),
+              message: duplicateGuidMessage(payload.topic),
             });
           }
           return;

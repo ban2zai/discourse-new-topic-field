@@ -2,6 +2,7 @@ import { apiInitializer } from "discourse/lib/api";
 import { i18n } from "discourse-i18n";
 import TaskGuidComposerField from "../components/task-guid-composer-field";
 import TaskGuidTopicHeader from "../components/task-guid-topic-header";
+import duplicateGuidMessage from "../lib/duplicate-guid-message";
 import { captureTaskGuid } from "../lib/task-guid-cache";
 
 async function linkedTopic(guid) {
@@ -20,7 +21,12 @@ async function linkedTopic(guid) {
   }
 
   const payload = await response.json();
-  return payload.topics?.[0];
+  const topic = payload.topics?.[0];
+
+  return {
+    linked: payload.linked === true || Boolean(topic),
+    topic,
+  };
 }
 
 async function validateSignature(guid, expires, nonce, sig) {
@@ -85,9 +91,9 @@ export default apiInitializer((api) => {
             }
           }
 
-          let topic;
+          let guidLink;
           try {
-            topic = await linkedTopic(this.task_guid);
+            guidLink = await linkedTopic(this.task_guid);
           } catch {
             this.dialog.dialog({
               type: "alert",
@@ -97,10 +103,10 @@ export default apiInitializer((api) => {
             return Promise.reject();
           }
 
-          if (topic) {
+          if (guidLink.linked) {
             this.dialog.dialog({
               type: "alert",
-              message: i18n("discourse_new_topic_field.topic.duplicate_guid"),
+              message: duplicateGuidMessage(guidLink.topic),
             });
 
             return Promise.reject();

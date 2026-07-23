@@ -161,7 +161,27 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
       get "/new-topic-field/topics.json", params: { guid: guid }
 
       expect(response.status).to eq(200)
+      expect(response.parsed_body["linked"]).to eq(true)
       expect(response.parsed_body["topics"].map { |item| item["topic_id"] }).to eq([topic.id])
+    end
+
+    it "reports an existing link without exposing an invisible topic" do
+      store_guid(topic)
+      topic.update!(visible: false)
+
+      get "/new-topic-field/topics.json", params: { guid: guid }
+
+      expect(response.status).to eq(200)
+      expect(response.parsed_body["linked"]).to eq(true)
+      expect(response.parsed_body["topics"]).to be_empty
+    end
+
+    it "reports an unknown guid as unlinked" do
+      get "/new-topic-field/topics.json", params: { guid: guid }
+
+      expect(response.status).to eq(200)
+      expect(response.parsed_body["linked"]).to eq(false)
+      expect(response.parsed_body["topics"]).to be_empty
     end
 
     it "requires a guid" do
@@ -541,6 +561,19 @@ RSpec.describe DiscourseNewTopicField::TopicsController do
 
       expect(response.status).to eq(409)
       expect(response.parsed_body["topic"]["topic_id"]).to eq(topic.id)
+      expect(response.parsed_body["topic"]["url"]).to eq(Discourse.base_url + topic.relative_url)
+      expect(second_topic.reload.custom_fields[DiscourseNewTopicField::FIELD_NAME]).to be_blank
+    end
+
+    it "does not expose a duplicate topic that the user cannot see" do
+      store_guid(topic)
+      topic.update!(visible: false)
+      sign_in(allowed_user)
+
+      put "/new-topic-field/topics/#{second_topic.id}/guid.json", params: { guid: guid }
+
+      expect(response.status).to eq(409)
+      expect(response.parsed_body).not_to have_key("topic")
       expect(second_topic.reload.custom_fields[DiscourseNewTopicField::FIELD_NAME]).to be_blank
     end
 

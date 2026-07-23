@@ -17,15 +17,12 @@ module DiscourseNewTopicField
       authorize_external_search!
 
       topic = DiscourseNewTopicField.topic_for_guid(guid)
-      topics =
-        if topic && topic.visible && topic.deleted_at.blank? && topic.archetype == Archetype.default &&
-             guardian.can_see?(topic)
-          [topic_payload(topic, guid)]
-        else
-          []
-        end
+      topics = visible_topic?(topic) ? [topic_payload(topic, guid)] : []
 
-      render json: { topics: topics }
+      render json: {
+               linked: topic.present?,
+               topics: topics,
+             }
     end
 
     def update_guid
@@ -40,12 +37,14 @@ module DiscourseNewTopicField
 
       render json: success_json.merge(topic_payload(topic, guid))
     rescue DiscourseNewTopicField::DuplicateGuidError => error
+      payload =
+        failed_json.merge(
+          errors: [I18n.t("discourse_new_topic_field.errors.guid_already_linked")],
+        )
+      payload[:topic] = topic_payload(error.topic, guid) if visible_topic?(error.topic)
+
       render(
-        json:
-          failed_json.merge(
-            errors: [I18n.t("discourse_new_topic_field.errors.guid_already_linked")],
-            topic: topic_payload(error.topic, guid),
-          ),
+        json: payload,
         status: 409,
       )
     end
@@ -109,6 +108,11 @@ module DiscourseNewTopicField
 
     def normalized_param_guid
       DiscourseNewTopicField.normalize_guid(params[:guid])
+    end
+
+    def visible_topic?(topic)
+      topic.present? && topic.visible && topic.deleted_at.blank? &&
+        topic.archetype == Archetype.default && guardian.can_see?(topic)
     end
 
     def authorize_external_search!

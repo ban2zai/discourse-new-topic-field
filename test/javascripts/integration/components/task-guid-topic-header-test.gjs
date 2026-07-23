@@ -62,6 +62,8 @@ module("Integration | Component | task-guid-topic-header", function (hooks) {
   hooks.beforeEach(function () {
     this.originalFetch = window.fetch;
     this.originalConfirm = window.confirm;
+    this.dialog = this.owner.lookup("service:dialog");
+    this.originalDialog = this.dialog.dialog;
     this.siteSettings = this.owner.lookup("service:site-settings");
     this.originalShowEmptyStatus =
       this.siteSettings.discourse_new_topic_field_show_empty_status;
@@ -71,6 +73,7 @@ module("Integration | Component | task-guid-topic-header", function (hooks) {
   hooks.afterEach(function () {
     window.fetch = this.originalFetch;
     window.confirm = this.originalConfirm;
+    this.dialog.dialog = this.originalDialog;
     this.siteSettings.discourse_new_topic_field_show_empty_status =
       this.originalShowEmptyStatus;
   });
@@ -266,5 +269,43 @@ module("Integration | Component | task-guid-topic-header", function (hooks) {
     assert.strictEqual(topic.task_guid, null);
     assert.dom(".new-topic-field-status-badge__guid").doesNotExist();
     assert.dom("[data-new-topic-field-add-guid]").exists();
+  });
+
+  test("shows a link to the topic that already owns the GUID", async function (assert) {
+    const topic = buildTopic({ id: 1, guid: "guid-before" });
+    let dialogOptions;
+
+    window.fetch = async () => ({
+      ok: false,
+      status: 409,
+      json: async () => ({
+        topic: {
+          url: "https://forum.example.com/t/linked-topic/42",
+        },
+      }),
+    });
+    this.dialog.dialog = (options) => {
+      dialogOptions = options;
+    };
+    this.set("topic", topic);
+
+    await render(
+      <template><TopicAbovePostsFixture @topic={{this.topic}} /></template>
+    );
+
+    await click(".new-topic-field-status-badge__action");
+    await fillIn("[data-new-topic-field-topic-guid]", "duplicate-guid");
+    await click(".btn-primary");
+
+    const message = dialogOptions.message.toString();
+
+    assert.strictEqual(dialogOptions.type, "alert");
+    assert.true(
+      message.includes(
+        'href="https://forum.example.com/t/linked-topic/42"'
+      )
+    );
+    assert.true(message.includes('target="_blank"'));
+    assert.dom(".new-topic-field-topic-header__editor").exists();
   });
 });
