@@ -1,14 +1,14 @@
 ru:
   site_settings:
-    discourse_new_topic_field_enabled: "Включить GUID задачи для тем"
-    discourse_new_topic_field_show_empty_status: "Показывать плашку «GUID задачи не получен», если GUID отсутствует"
-    discourse_new_topic_field_allowed_groups: "Группы, которым разрешено видеть и менять GUID задачи в существующих темах"
-    discourse_new_topic_field_require_signature: "Требовать HMAC-подпись для ссылок с GUID задачи"
-    discourse_new_topic_field_signature_secret: "Секрет для проверки HMAC-подписи ссылок с GUID задачи"
-    discourse_new_topic_field_lookup_token: "Секретный URL-токен для server-to-server endpoint'ов поиска тем по GUID"
+    discourse_new_topic_field_enabled: "Включить связь тем с внешними задачами"
+    discourse_new_topic_field_show_empty_status: "Показывать плашку «Тема не связана с задачей», если связь отсутствует"
+    discourse_new_topic_field_allowed_groups: "Группы, которым разрешено видеть и изменять связь темы с задачей"
+    discourse_new_topic_field_require_signature: "Требовать HMAC-подпись для ссылок на задачи"
+    discourse_new_topic_field_signature_secret: "Секрет для проверки HMAC-подписи ссылок на задачи"
+    discourse_new_topic_field_lookup_token: "Секретный URL-токен для server-to-server поиска связи темы с задачей"
   discourse_new_topic_field:
     errors:
-      guid_required: "Укажите GUID задачи."
-      guid_already_linked: "GUID задачи уже привязан к другой теме."
-      guid_delete_failed: "Не удалось удалить GUID задачи."
-      invalid_signature: "Подпись GUID задачи неверна или устарела."
+      guid_required: "Отсутствует связь с задачей."
+      guid_already_linked: "Эта задача уже связана с другой темой."
+      guid_delete_failed: "Не удалось удалить связь темы с задачей."
+      invalid_signature: "Ссылка на задачу недействительна или устарела."

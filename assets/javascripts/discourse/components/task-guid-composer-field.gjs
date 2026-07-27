@@ -136,15 +136,6 @@ export default class TaskGuidComposerField extends Component {
           <div class="new-topic-field-status-badge__label">
             {{this.badgeLabel}}
           </div>
-
-          {{#if this.hasGuid}}
-            <div
-              class="new-topic-field-status-badge__guid"
-              data-new-topic-field-composer-guid
-            >
-              {{this.guid}}
-            </div>
-          {{/if}}
         </div>
       </div>
     {{/if}}

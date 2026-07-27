@@ -154,17 +154,16 @@ after_initialize do
 
   module ::DiscourseNewTopicField::GuardianExtensions
     def can_view_task_guid?(topic = nil)
-      return false unless SiteSetting.discourse_new_topic_field_enabled
-      return false if @user.blank?
-
-      can_manage_task_guid?(topic) || (topic.present? && topic.user_id == @user.id)
+      can_manage_task_guid?(topic)
     end
 
     def can_manage_task_guid?(_topic = nil)
       return false unless SiteSetting.discourse_new_topic_field_enabled
+      return false if @user.blank?
+      return true if @user.admin?
 
       allowed_group_ids = DiscourseNewTopicField.allowed_group_ids
-      allowed_group_ids.present? && @user&.in_any_groups?(allowed_group_ids)
+      allowed_group_ids.present? && @user.in_any_groups?(allowed_group_ids)
     end
 
     def ensure_can_manage_task_guid!(topic = nil)

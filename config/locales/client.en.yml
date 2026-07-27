@@ -1,26 +1,26 @@
 en:
   js:
     discourse_new_topic_field:
-      guid_label: "Task GUID"
+      guid_label: "Task identifier"
       status:
-        linked: "Task GUID received"
-        unlinked: "Task GUID not received"
-        invalid: "Task GUID failed verification"
+        linked: "Topic linked to task"
+        unlinked: "Topic not linked to task"
+        invalid: "Task link verification failed"
       composer:
-        notice: "Task GUID received."
+        notice: "This topic will be linked to a task."
       topic:
         add: "Add"
         edit: "Edit"
         delete: "Delete"
         cancel: "Cancel"
-        save: "Save GUID"
+        save: "Save link"
         saving: "Saving..."
-        save_failed: "Failed to save task GUID. Try again or contact an administrator."
-        delete_confirm: "Delete the task GUID from this topic?"
-        delete_failed: "Failed to delete task GUID. Try again or contact an administrator."
-        duplicate_guid: "This task GUID is already linked to another topic."
+        save_failed: "Failed to link this topic to the task. Try again or contact an administrator."
+        delete_confirm: "Remove the link between this topic and the task?"
+        delete_failed: "Failed to remove the task link. Try again or contact an administrator."
+        duplicate_guid: "This task is already linked to another topic."
         duplicate_guid_link: "Open topic"
-        invalid_signature: "Task GUID signature is invalid or expired. Open the task link again from 1C."
-        lookup_failed: "Failed to check task GUID. Topic creation is stopped; try again or contact an administrator."
+        invalid_signature: "The task link is invalid or expired. Open the task link again from 1C."
+        lookup_failed: "Failed to check the task link. Topic creation is stopped; try again or contact an administrator."
       errors:
-        guid_required: "Enter a task GUID."
+        guid_required: "Enter the task identifier."
