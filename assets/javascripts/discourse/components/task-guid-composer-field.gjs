@@ -1,6 +1,8 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
+import { action } from "@ember/object";
 import { service } from "@ember/service";
+import { on } from "@ember/modifier";
 import { i18n } from "discourse-i18n";
 import { consumeTaskGuid } from "../lib/task-guid-cache";
 
@@ -23,6 +25,7 @@ async function validateSignature(guid, expires, nonce, sig) {
 
 export default class TaskGuidComposerField extends Component {
   @service siteSettings;
+  @service currentUser;
 
   @tracked invalidSignature = false;
   @tracked displayedGuid = null;
@@ -52,6 +55,10 @@ export default class TaskGuidComposerField extends Component {
 
   get hasGuid() {
     return Boolean(this.guid?.trim());
+  }
+
+  get canViewGuid() {
+    return Boolean(this.currentUser?.can_manage_task_guid);
   }
 
   get badgeClasses() {
@@ -90,6 +97,12 @@ export default class TaskGuidComposerField extends Component {
     model.set("task_guid_expires", null);
     model.set("task_guid_nonce", null);
     model.set("task_guid_sig", null);
+  }
+
+  @action
+  unlinkTask() {
+    this.invalidSignature = false;
+    this.clearTaskGuid(this.model);
   }
 
   syncGuidFromUrl() {
@@ -133,9 +146,29 @@ export default class TaskGuidComposerField extends Component {
     {{#if this.shouldRender}}
       <div class="new-topic-field-composer" data-new-topic-field-composer>
         <div class={{this.badgeClasses}}>
-          <div class="new-topic-field-status-badge__label">
-            {{this.badgeLabel}}
+          <div class="new-topic-field-status-badge__content">
+            <div class="new-topic-field-status-badge__label">
+              {{this.badgeLabel}}
+            </div>
+
+            {{#if this.canViewGuid}}
+              {{#if this.hasGuid}}
+                <div class="new-topic-field-status-badge__guid">
+                  {{this.guid}}
+                </div>
+              {{/if}}
+            {{/if}}
           </div>
+
+          {{#if this.hasGuid}}
+            <button
+              type="button"
+              class="btn btn-default btn-small new-topic-field-status-badge__action"
+              {{on "click" this.unlinkTask}}
+            >
+              {{i18n "discourse_new_topic_field.topic.delete"}}
+            </button>
+          {{/if}}
         </div>
       </div>
     {{/if}}

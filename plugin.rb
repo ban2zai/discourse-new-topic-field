@@ -173,6 +173,10 @@ after_initialize do
 
   reloadable_patch { ::Guardian.prepend(::DiscourseNewTopicField::GuardianExtensions) }
 
+  add_to_serializer(:current_user, :can_manage_task_guid) do
+    scope.can_manage_task_guid?
+  end
+
   add_to_serializer(:topic_view, :task_guid) do
     if scope.can_view_task_guid?(object.topic)
       object.topic.custom_fields[DiscourseNewTopicField::FIELD_NAME]

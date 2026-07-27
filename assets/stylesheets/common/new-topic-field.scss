@@ -13,6 +13,12 @@
   margin: 0 0 0.75em;
 }
 
+.new-topic-field-composer > .new-topic-field-status-badge {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
 .new-topic-field-status-badge {
   border-radius: 6px;
   box-sizing: border-box;
@@ -158,7 +164,7 @@
     flex-direction: column;
   }
 
-  .new-topic-field-status-badge__action {
+  .new-topic-field-topic-header .new-topic-field-status-badge__action {
     margin-left: 0;
     width: 100%;
   }
