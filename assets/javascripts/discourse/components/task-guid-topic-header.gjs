@@ -15,8 +15,10 @@ function csrfToken() {
 function setTopicGuid(topic, guid) {
   if (typeof topic?.set === "function") {
     topic.set("task_guid", guid);
+    topic.set("task_guid_linked", Boolean(guid?.trim()));
   } else if (topic) {
     topic.task_guid = guid;
+    topic.task_guid_linked = Boolean(guid?.trim());
   }
 }
 
@@ -30,10 +32,8 @@ export default class TaskGuidTopicHeader extends Component {
   @tracked visibleGuidTopicId = null;
   @tracked saving = false;
 
-  static shouldRender(args) {
-    return (
-      args.model?.can_view_task_guid || args.outletArgs?.model?.can_view_task_guid
-    );
+  static shouldRender() {
+    return true;
   }
 
   get topic() {
@@ -56,6 +56,14 @@ export default class TaskGuidTopicHeader extends Component {
     return Boolean(this.topic?.can_manage_task_guid);
   }
 
+  get canViewGuid() {
+    return Boolean(this.topic?.can_view_task_guid);
+  }
+
+  get isLinked() {
+    return Boolean(this.topic?.task_guid_linked);
+  }
+
   get hasGuid() {
     return Boolean(this.savedGuid?.trim());
   }
@@ -65,18 +73,18 @@ export default class TaskGuidTopicHeader extends Component {
   }
 
   get showStatusBadge() {
-    return this.hasGuid || this.showEmptyStatus;
+    return this.isLinked || (this.canViewGuid && this.showEmptyStatus);
   }
 
   get shouldRenderContent() {
     return (
-      Boolean(this.topic?.can_view_task_guid) &&
+      this.siteSettings.discourse_new_topic_field_enabled &&
       (this.showStatusBadge || this.canManage)
     );
   }
 
   get badgeClasses() {
-    const stateClass = this.hasGuid
+    const stateClass = this.isLinked
       ? "new-topic-field-status-badge--linked"
       : "new-topic-field-status-badge--unlinked";
 
@@ -84,7 +92,7 @@ export default class TaskGuidTopicHeader extends Component {
   }
 
   get badgeLabel() {
-    return this.hasGuid
+    return this.isLinked
       ? i18n("discourse_new_topic_field.status.linked")
       : i18n("discourse_new_topic_field.status.unlinked");
   }
@@ -274,10 +282,12 @@ export default class TaskGuidTopicHeader extends Component {
                 {{this.badgeLabel}}
               </div>
 
-              {{#if this.hasGuid}}
-                <div class="new-topic-field-status-badge__guid">
-                  {{this.savedGuid}}
-                </div>
+              {{#if this.canViewGuid}}
+                {{#if this.hasGuid}}
+                  <div class="new-topic-field-status-badge__guid">
+                    {{this.savedGuid}}
+                  </div>
+                {{/if}}
               {{/if}}
             </div>
 

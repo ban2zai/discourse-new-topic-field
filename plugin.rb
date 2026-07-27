@@ -179,6 +179,10 @@ after_initialize do
     end
   end
 
+  add_to_serializer(:topic_view, :task_guid_linked) do
+    object.topic.custom_fields[DiscourseNewTopicField::FIELD_NAME].present?
+  end
+
   add_to_serializer(:topic_view, :can_view_task_guid) do
     scope.can_view_task_guid?(object.topic)
   end
