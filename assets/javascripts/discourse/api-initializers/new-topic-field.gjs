@@ -53,6 +53,10 @@ export default apiInitializer((api) => {
   api.serializeOnCreate("task_guid_expires");
   api.serializeOnCreate("task_guid_nonce");
   api.serializeOnCreate("task_guid_sig");
+  api.serializeToDraft("task_guid");
+  api.serializeToDraft("task_guid_expires");
+  api.serializeToDraft("task_guid_nonce");
+  api.serializeToDraft("task_guid_sig");
   api.renderInOutlet("composer-fields", TaskGuidComposerField);
   api.renderInOutlet("topic-above-posts", TaskGuidTopicHeader);
 
