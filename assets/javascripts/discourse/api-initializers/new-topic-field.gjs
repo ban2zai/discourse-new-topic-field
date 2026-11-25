@@ -62,60 +62,54 @@ export default apiInitializer((api) => {
 
   api.onPageChange((url) => captureTaskGuid(url));
 
-  api.modifyClass(
-    "model:composer",
-    (Superclass) =>
-      class extends Superclass {
-        async beforeSave() {
-          await super.beforeSave(...arguments);
+  api.composerBeforeSave(async function () {
+    await this._super(...arguments);
 
-          if (
-            this.siteSettings.discourse_new_topic_field_enabled === false ||
-            !this.creatingTopic ||
-            !this.task_guid
-          ) {
-            return;
-          }
+    if (
+      this.siteSettings.discourse_new_topic_field_enabled === false ||
+      !this.creatingTopic ||
+      !this.task_guid
+    ) {
+      return;
+    }
 
-          if (this.siteSettings.discourse_new_topic_field_require_signature) {
-            try {
-              await validateSignature(
-                this.task_guid,
-                this.task_guid_expires,
-                this.task_guid_nonce,
-                this.task_guid_sig
-              );
-            } catch {
-              this.dialog.dialog({
-                type: "alert",
-                message: i18n("discourse_new_topic_field.topic.invalid_signature"),
-              });
+    if (this.siteSettings.discourse_new_topic_field_require_signature) {
+      try {
+        await validateSignature(
+          this.task_guid,
+          this.task_guid_expires,
+          this.task_guid_nonce,
+          this.task_guid_sig
+        );
+      } catch {
+        this.dialog.dialog({
+          type: "alert",
+          message: i18n("discourse_new_topic_field.topic.invalid_signature"),
+        });
 
-              return Promise.reject();
-            }
-          }
-
-          let guidLink;
-          try {
-            guidLink = await linkedTopic(this.task_guid);
-          } catch {
-            this.dialog.dialog({
-              type: "alert",
-              message: i18n("discourse_new_topic_field.topic.lookup_failed"),
-            });
-
-            return Promise.reject();
-          }
-
-          if (guidLink.linked) {
-            this.dialog.dialog({
-              type: "alert",
-              message: duplicateGuidMessage(guidLink.topic),
-            });
-
-            return Promise.reject();
-          }
-        }
+        return Promise.reject();
       }
-  );
+    }
+
+    let guidLink;
+    try {
+      guidLink = await linkedTopic(this.task_guid);
+    } catch {
+      this.dialog.dialog({
+        type: "alert",
+        message: i18n("discourse_new_topic_field.topic.lookup_failed"),
+      });
+
+      return Promise.reject();
+    }
+
+    if (guidLink.linked) {
+      this.dialog.dialog({
+        type: "alert",
+        message: duplicateGuidMessage(guidLink.topic),
+      });
+
+      return Promise.reject();
+    }
+  });
 });
